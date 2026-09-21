@@ -19,13 +19,13 @@ void hide_cursor()//隐藏光标
     a.dwSize=1;
     SetConsoleCursorInfo(handle_output,&a);
 }
-int get_width()
+int get_console_width()
 {
     CONSOLE_SCREEN_BUFFER_INFO a;
     GetConsoleScreenBufferInfo(handle_output,&a);
     return a.srWindow.Right-a.srWindow.Left+1;
 }
-int get_height()
+int get_console_height()
 {
     CONSOLE_SCREEN_BUFFER_INFO a;
     GetConsoleScreenBufferInfo(handle_output,&a);
@@ -85,7 +85,7 @@ int main()
 {
     system("cls");
     hide_cursor();
-    W=get_width()-1;H=get_height()-1;//获取控制台窗口宽高
+    W=get_console_width()-1;H=get_console_height()-1;//获取控制台窗口宽高
     printf("Please input the number(1~9) of letters within %d seconds.If you do not input,it will be 7.\n",waittime/1000);
     n=input();
     if(n==0) n=7;
