@@ -16,13 +16,16 @@ int main()
     system("cls");
     printf("I will output all prime numbers less than 1000,and the time it takes.\n");
     o=(bool*)malloc(sizeof(bool)*1007);
-    DWORD on=GetTickCount();
+    LARGE_INTEGER frequency,start,end;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
     for(usint i=2,j;i<1000;i++)
     {
         if(!*(o+i)) wt(i),putchar('\n');
         for(j=i;j<1000;j+=i) *(o+j)=1;
     }
-    printf("used time:%dms\n",GetTickCount()-on);
+    QueryPerformanceCounter(&end);
+    printf("used time:%.4lfms\n",(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000);
     return 0;
 }//线性筛选  O(n)
 
@@ -46,13 +49,16 @@ int main()
     system("cls");
     printf("I will output all prime numbers less than 10000000,and the time it takes.\n");
     o=(bool*)malloc(sizeof(bool)*10000007);
-    DWORD on=GetTickCount();
+    LARGE_INTEGER frequency,start,end;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
     for(uint i=2,j;i<10000000;i++)
     {
         if(!*(o+i)) wt(i),putchar('\n');
         for(j=i;j<10000000;j+=i) *(o+j)=1;
     }
-    printf("used time:%dms\n",GetTickCount()-on);
+    QueryPerformanceCounter(&end);
+    printf("used time:%.4lfms\n",(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000);
     return 0;
 }*/
 
@@ -76,9 +82,12 @@ int main()
     system("cls");
     printf("I will output all prime numbers less than 1000000000000000000,and the time it takes.\n");
     o=(bool*)malloc(sizeof(bool)*1000000000000000007);
-    DWORD on=GetTickCount();
+    LARGE_INTEGER frequency,start,end;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
     for(uLL i=2,j;i<1000000000000000000;j+=i)
     }
-    printf("used time:%dms\n",GetTickCount()-on);
+    QueryPerformanceCounter(&end);
+    printf("used time:%.4lfms\n",(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000);
     return 0;
 }//线性筛选  O(n)*/

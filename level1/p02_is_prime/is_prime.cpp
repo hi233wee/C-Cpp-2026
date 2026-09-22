@@ -14,10 +14,9 @@ uLL rd()
     {x=x*10+c-'0';c=getchar();}
     return x;
 }
-void gotoxy(int x,int y)//移动光标
+void gotoxy(short x,short y)//移动光标
 {
-    COORD a;
-    a.X=x;a.Y=y;
+    COORD a={x,y};
     SetConsoleCursorPosition(handle_output,a);
 }
 int get_cursor_line()
@@ -56,8 +55,8 @@ uLL power_mod(uLL a,uLL b,uLL mod)//a^b mod mod
 }
 bool is_prime(uLL n)
 {
-    if(n<2) return false;
-    if(n==2) return true;
+    if(n<2)    return false;
+    if(n==2)   return true;
     if(n%2==0) return false;
     uLL d=n-1;int s=0;
     while(d%2==0) d>>=1,s++;
@@ -80,19 +79,18 @@ int main()
 {
     system("cls");
     uLL n;char c;
-    while(1)
+    for(;;)
     {
         printf("Please input a number to check whether it is a prime number or not.\n");
         n=rd();
         erase_line(get_cursor_line()-1);erase_line(get_cursor_line()-2);gotoxy(0,get_cursor_line()-2);
         if(is_prime(n)) printf("%llu is a prime number.\n",n);
-        else printf("%llu is not a prime number.\n",n);
+        else            printf("%llu is not a prime number.\n",n);
         printf("Please press 'ENTER' to continue or 'ESC' to exit.");
-        while(1)
+        for(;;)
         {
             c=_getch();
-            if(c==27)
-            {erase_line(get_cursor_line());return 0;}
+            if(c==27) {erase_line(get_cursor_line());return 0;}
             else if(c==13) break;
         }
         erase_line(get_cursor_line());gotoxy(0,get_cursor_line());
