@@ -21,6 +21,11 @@ inline int Rand()
 {
     return RAND(RNG);
 }
+uniform_int_distribution<int> RAND_COLOR(1,15);//1-15随机颜色,避开黑色(通关画面背景是黑的)
+inline int Rand_color()
+{
+    return RAND_COLOR(RNG);
+}
 
 /* ==================== 控制台工具函数 ==================== */
 
@@ -90,6 +95,16 @@ void end_screen(double ms)//-------------------------通关画面
     {set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
     else
     {set_color(0,11);printf("%.4lf 秒\n",s);}
+    set_color(0,7 );printf("\n  按任意键继续……");
+    while(!_kbhit())
+    {
+        set_color(0,Rand_color());
+        gotoxy(15,6);//"Y O U   W I N ! !"的位置
+        printf("Y O U   W I N ! !");
+        Sleep(150);
+    }
+    _getch();
+    gotoxy(0,11);//光标返回
 }
 
 /* ==================== 选择 ==================== */
