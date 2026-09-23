@@ -56,37 +56,46 @@ int inputn()
     COORD a={x,y};
     SetConsoleCursorPosition(handle_output,a);
 }*/
-void erase_output(int x_1,int y_1,int x_2,int y_2)//擦除输出
+bool o[777][77];
+char get(short x,short y)//读取
 {
-    COORD a;DWORD b;
-    a.X=x_1;a.Y=y_1;
+    COORD pos={x,y};DWORD b;char c;
+    ReadConsoleOutputCharacterA(handle_output,&c,1,pos,&b);
+    return c;
+}
+void erase(short x,short y)//擦除
+{
+    if(o[x][y]) {o[x][y]=0;return;}
+    COORD a={x,y};DWORD b;
     FillConsoleOutputCharacter(handle_output,' ',1,a,&b);
-    a.X=x_2;a.Y=y_2;
+}
+void output(short x,short y)//输出
+{
+    if(get(x,y)==c) o[x][y]=1;
+    COORD a={x,y};DWORD b;
     FillConsoleOutputCharacter(handle_output,c,1,a,&b);
+}
+void move(letter&a)
+{
+         if(a.o==1) a.x++;
+    else if(a.o==2) a.y++;
+    else if(a.o==3) a.x--;
+    else if(a.o==4) a.y--;
+    for(;;)
+             if(a.x>=W&&a.o==1) a.o=2;
+        else if(a.y>=H&&a.o==2) a.o=3;
+        else if(a.x<=0&&a.o==3) a.o=4;
+        else if(a.y<=0&&a.o==4) a.o=1;
+        else break;
 }
 void letter_went()
 {
     for(;;)
     {
-             if(Head.o==1) Head.x++;
-        else if(Head.o==2) Head.y++;
-        else if(Head.o==3) Head.x--;
-        else if(Head.o==4) Head.y--;
-        for(int i=3;i--;)
-                 if(Head.x>=W&&Head.o==1) Head.o=2;
-            else if(Head.y>=H&&Head.o==2) Head.o=3;
-            else if(Head.x<=0&&Head.o==3) Head.o=4;
-            else if(Head.y<=0&&Head.o==4) Head.o=1;
-        erase_output(End.x,End.y,Head.x,Head.y);
-             if(End.o==1) End.x++;
-        else if(End.o==2) End.y++;
-        else if(End.o==3) End.x--;
-        else if(End.o==4) End.y--;
-        for(int i=3;i--;)
-                 if(End.x>=W&&End.o==1) End.o=2;
-            else if(End.y>=H&&End.o==2) End.o=3;
-            else if(End.x<=0&&End.o==3) End.o=4;
-            else if(End.y<=0&&End.o==4) End.o=1;
+        move(Head);
+        output(Head.x,Head.y);
+        erase(End.x,End.y);
+        move(End);
         Sleep(sleeptime);
         if(_kbhit()) if(_getch()==27) break;
     }
@@ -98,10 +107,12 @@ int main()
     get_console_size(W,H);//获取控制台窗口宽高
     W--;H--;
     H=0;//题目让我这么干的
+    if(W==0)
+    {printf("Your concole is too small!");return 0;}
     printf("Please input the number of letters within %d seconds.\n",waittime/1000);
     printf("If you do not input,it will be 7.\n");
     n=inputn();
-    if(n<1 || n>W+W+H+H) n=7;
+    if(n<1 || n>W+H) n=7;
     printf("Please input the letter you want to run within %d seconds.\n",waittime/1000);
     printf("If you do not input,it will be '7'.\n\n");
     c=inputc();
@@ -113,18 +124,10 @@ int main()
     End.x=End.y=Head.x=Head.y=0;End.o=Head.o=1;
     for(int i=1;i<n;i++)
     {
-             if(Head.o==1) Head.x++;
-        else if(Head.o==2) Head.y++;
-        else if(Head.o==3) Head.x--;
-        else if(Head.o==4) Head.y--;
-        for(int i=3;i--;)
-                 if(Head.x>=W&&Head.o==1) Head.o=2;
-            else if(Head.y>=H&&Head.o==2) Head.o=3;
-            else if(Head.x<=0&&Head.o==3) Head.o=4;
-            else if(Head.y<=0&&Head.o==4) Head.o=1;
-        erase_output(0,0,Head.x,Head.y);
+        move(Head);
+        output(Head.x,Head.y);
     }
-    erase_output(0,0,0,0);
+    output(0,0);
     letter_went();//开跑
     return 0;
 }//其实还可以写定义颜色，但是我懒
