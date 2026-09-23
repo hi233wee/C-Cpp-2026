@@ -15,7 +15,7 @@ int main()
 {
     system("cls");
     printf("I will output all prime numbers less than 1000,and the time it takes.\n");
-    o=(bool*)malloc(sizeof(bool)*1007);
+    o=(bool*)malloc(sizeof(bool)*1007);o={};
     LARGE_INTEGER frequency,start,end;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
