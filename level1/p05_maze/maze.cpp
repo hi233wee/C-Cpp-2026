@@ -12,6 +12,21 @@
 #include<windows.h>
 using namespace std;
 
+/* ==================== 神秘插件 ====================*/
+
+/*void wait(int ms)//--------------------------------等待
+{
+    DWORD on=GetTickCount();
+    for(;;)
+    {
+        if(GetTickCount()>ms+on)
+        {
+            break;
+        }
+        if(_kbhit()) _getch();
+    }
+}*/
+
 /* ==================== 随机函数 ====================*/
 
 random_device RD;
@@ -21,13 +36,13 @@ inline int Rand()
 {
     return RAND(RNG);
 }
-uniform_int_distribution<int> RAND_COLOR(1,15);//1-15随机颜色,避开黑色(通关画面背景是黑的)
+uniform_int_distribution<int> RAND_COLOR(1,15);//1-15随机颜色,避开黑色
 inline int Rand_color()
 {
     return RAND_COLOR(RNG);
 }
 
-/* ==================== 控制台工具函数 ==================== */
+/* ==================== 控制台工具 ==================== */
 
 HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
 void hide_cursor()//---------------------------------隐藏光标
@@ -42,14 +57,14 @@ void gotoxy(short x,short y)//-----------------------移动光标
     COORD a={x,y};
     SetConsoleCursorPosition(handle_output,a);
 }
-void get_console_size(int& w,int& h)//-----------------获取控制台宽高
+void get_console_size(int& w,int& h)//---------------获取控制台宽高
 {
     CONSOLE_SCREEN_BUFFER_INFO a;
     GetConsoleScreenBufferInfo(handle_output,&a);
     w=a.srWindow.Right-a.srWindow.Left+1;
     h=a.srWindow.Bottom-a.srWindow.Top+1;
 }
-void set_color(int BG,int FG)//---------------------设置颜色；BG背景；FG前景
+void set_color(int BG,int FG)//----------------------设置颜色；BG背景；FG前景
 {
     SetConsoleTextAttribute(handle_output,(WORD)((BG<<4)|FG));
 }
@@ -61,6 +76,7 @@ const char* COLOR_NAMES[16]=//-----------------------颜色模版
 
 void start_screem()//--------------------------------开始界面
 {
+    system("cls");
     set_color(0,10);printf("=================================================\n");
                     printf("                 迷 宫 小 游 戏\n");
                     printf("=================================================\n");
@@ -95,15 +111,16 @@ void end_screen(double ms)//-------------------------通关画面
     {set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
     else
     {set_color(0,11);printf("%.4lf 秒\n",s);}
-    set_color(0,7 );printf("\n  按任意键继续……");
-    while(!_kbhit())
+    set_color(0,7 );printf("\n  按 ENTER 键继续……");
+    //wait(1000);
+    for(;;)
     {
         set_color(0,Rand_color());
         gotoxy(15,6);//"Y O U   W I N ! !"的位置
         printf("Y O U   W I N ! !");
         Sleep(150);
+        if(_kbhit()) if(_getch()=='\r') break;
     }
-    _getch();
     gotoxy(0,11);//光标返回
 }
 
@@ -114,18 +131,14 @@ char pick_symbol()//---------------------------------选角
     for(;;)
     {
         set_color(0,7);
-        printf("请输入一个字符作为玩家符号(你看得见就行)。(回车默认 7): ");
+        printf("请输入一个常见字符作为玩家符号。(回车默认 7): ");
         fflush(stdout);
         string s;
         getline(cin,s);
-        if (s.empty()) return '7';
-        for(int i=0;i<s.size();i++)
-        {
-            unsigned char c=(unsigned char)s[i];
-            if(c>32&&c<127) return (char)c;//取第一个可见 ASCII 字符
-        }
+        if(s.empty())   return '7' ;
+        if(s.size()==1) return s[0];
         set_color(0,7 );printf("你……我……叫你输 ");
-        set_color(0,12);printf("一个！可见的！");
+        set_color(0,12);printf("一个！常见的！\n");
     }
 }
 void show_color_table()//----------------------------展示颜色选择
@@ -149,7 +162,7 @@ int pick_color(const string& title, int DEf_COlOR)//-选颜色
         fflush(stdout);
         string s;
         getline(cin,s);
-        if (s.empty()) return DEf_COlOR;
+        if(s.empty()) return DEf_COlOR;
         int n=atoi(s.c_str());//转换成数字
         if(n>=0&&n<=15) return n;
         set_color(0,7 );printf("你瞎吗? ");
@@ -298,7 +311,6 @@ int main()
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
     hide_cursor();
-    system("cls");
 
     for(;;)
     {
@@ -315,14 +327,14 @@ int main()
         {
             set_color(0,7);
             printf("  你自己选的啊，看不见别怪我");
-            Sleep(7000);
+            Sleep(1000);
         }
         
         /* ---------- 迷宫大小由控制台窗口决定 ---------- */
         int W,H;
         get_console_size(W,H);
-        int R_ROOM=(H-6)/2;//房间行列数
-        int C_ROOM=(W-4)/2;//预留: 外圈捷径 + 底部引导行
+        int R_ROOM=(H-4)/2;//房间行列数
+        int C_ROOM=(W-3)/2;//预留: 外圈捷径 + 底部引导行
         if(R_ROOM<2 || C_ROOM<2)
         {
             set_color(0,12);
@@ -339,7 +351,7 @@ int main()
         draw_maze(maze,WALL_COLOR,BG_COLOR);
 
         /* ---------- 底部简略引导 ---------- */
-        gotoxy(0,maze.size()+1);
+        gotoxy(0,maze.size());
         set_color(BG_COLOR,WALL_COLOR);
         printf("  ↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | S 入口  E 出口 ");
 
