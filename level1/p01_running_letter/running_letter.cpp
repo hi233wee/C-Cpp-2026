@@ -1,7 +1,7 @@
 #include<iostream>
 #include<cstdio>
 #include<algorithm>
-#include<Windows.h>
+#include<windows.h>
 #include<conio.h>
 using namespace std;
 #define waittime 7000
@@ -26,16 +26,30 @@ void get_console_size(int&w,int&h)//获取控制台宽高
     w=a.srWindow.Right-a.srWindow.Left+1;
     h=a.srWindow.Bottom-a.srWindow.Top+1;
 }
-char input()//限时输入
+char inputc()//限时输入
 {
     DWORD on=GetTickCount();
     while(GetTickCount()<waittime+on)
     {
         if(_kbhit()) //检测按按键
-            return _getch(); //读取
+            return getchar(); //读取
         Sleep(10);
     }
     return 0;
+}
+int inputn()
+{
+    string s;
+    DWORD on=GetTickCount();
+    while(GetTickCount()<waittime+on)
+    {
+        if(_kbhit()) //检测按按键
+        {getline(cin,s);break;} //读取
+        Sleep(10);
+    }
+    if(s.empty()) return 0;
+    int n=atoi(s.c_str());//转换成数字
+    return n;
 }
 /*void gotoxy(short x,short y)//移动光标
 {
@@ -58,19 +72,21 @@ void letter_went()
         else if(Head.o==2) Head.y++;
         else if(Head.o==3) Head.x--;
         else if(Head.o==4) Head.y--;
-             if(Head.x==W&&Head.o==1) Head.o=2;
-        else if(Head.y==H&&Head.o==2) Head.o=3;
-        else if(Head.x==0&&Head.o==3) Head.o=4;
-        else if(Head.y==0&&Head.o==4) Head.o=1;
+        for(int i=3;i--;)
+                 if(Head.x>=W&&Head.o==1) Head.o=2;
+            else if(Head.y>=H&&Head.o==2) Head.o=3;
+            else if(Head.x<=0&&Head.o==3) Head.o=4;
+            else if(Head.y<=0&&Head.o==4) Head.o=1;
         erase_output(End.x,End.y,Head.x,Head.y);
              if(End.o==1) End.x++;
         else if(End.o==2) End.y++;
         else if(End.o==3) End.x--;
         else if(End.o==4) End.y--;
-             if(End.x==W&&End.o==1) End.o=2;
-        else if(End.y==H&&End.o==2) End.o=3;
-        else if(End.x==0&&End.o==3) End.o=4;
-        else if(End.y==0&&End.o==4) End.o=1;
+        for(int i=3;i--;)
+                 if(End.x>=W&&End.o==1) End.o=2;
+            else if(End.y>=H&&End.o==2) End.o=3;
+            else if(End.x<=0&&End.o==3) End.o=4;
+            else if(End.y<=0&&End.o==4) End.o=1;
         Sleep(sleeptime);
         if(_kbhit()) if(_getch()==27) break;
     }
@@ -81,15 +97,15 @@ int main()
     hide_cursor();
     get_console_size(W,H);//获取控制台窗口宽高
     W--;H--;
-    printf("Please input the number(1~9) of letters within %d seconds.",waittime/1000);
+    H=0;//题目让我这么干的
+    printf("Please input the number of letters within %d seconds.\n",waittime/1000);
     printf("If you do not input,it will be 7.\n");
-    n=input();
-    if(n==0) n=7;
-    else n=n-'0';
-    printf("Please input the letter you want to run within %d seconds.",waittime/1000);
-    printf("If you do not input,it will be '7'.\n");
-    c=input();
-    if(c==0) c='7';
+    n=inputn();
+    if(n<1 || n>W+W+H+H) n=7;
+    printf("Please input the letter you want to run within %d seconds.\n",waittime/1000);
+    printf("If you do not input,it will be '7'.\n\n");
+    c=inputc();
+    if(c<32 || c>126) c='7';
     printf("Don't change anything about the console window.\n");
     printf("When it is running,you can press the 'ESC' key to exit the program.\n");
     printf("Please press any key to start the game."); _getch();
@@ -101,10 +117,11 @@ int main()
         else if(Head.o==2) Head.y++;
         else if(Head.o==3) Head.x--;
         else if(Head.o==4) Head.y--;
-             if(Head.x==W&&Head.o==1) Head.o=2;
-        else if(Head.y==H&&Head.o==2) Head.o=3;
-        else if(Head.x==0&&Head.o==3) Head.o=4;
-        else if(Head.y==0&&Head.o==4) Head.o=1;
+        for(int i=3;i--;)
+                 if(Head.x>=W&&Head.o==1) Head.o=2;
+            else if(Head.y>=H&&Head.o==2) Head.o=3;
+            else if(Head.x<=0&&Head.o==3) Head.o=4;
+            else if(Head.y<=0&&Head.o==4) Head.o=1;
         erase_output(0,0,Head.x,Head.y);
     }
     erase_output(0,0,0,0);
