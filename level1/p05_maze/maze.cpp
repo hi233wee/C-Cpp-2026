@@ -90,6 +90,7 @@ void start_screem()//--------------------------------开始界面
     set_color(0, 7);printf(" 是出口(终点)\n");
     set_color(0,11);printf("-------------------------------------------------\n");
     set_color(0, 7);printf("  接下来自定义游戏外观：\n\n");
+    fflush(stdout);
 }
 void end_screen(double ms)//-------------------------通关画面
 {
@@ -112,6 +113,7 @@ void end_screen(double ms)//-------------------------通关画面
     else{
         set_color(0,11);printf("%.4lf 秒\n",s);}
     set_color(0, 7);printf("\n  按 ENTER 键继续……");
+    fflush(stdout);
     //wait(1000);
     for(;;)
     {

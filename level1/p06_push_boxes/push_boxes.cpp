@@ -15,20 +15,130 @@
 #include<map>
 using namespace std;
 
-/* ==================== 神秘插件 ====================*/
+/* ==================== 游戏数据 ==================== */
 
-/*void wait(int ms)//--------------------------------等待
+string DISP[256];//---------------------------字符对应表:地图字符->显示字符
+const string SCORE=R"(score.push_boxes)";//---成绩文件夹
+const string DIR=R"(levels\)";//--------------关卡文件夹
+const string NAME=R"(level_*)";//-------------关卡命名方式
+const string EXTENTION=R"(.push_boxes)";//----关卡后缀
+map<string,pair<int,double> > BESTS;//--------每关历史最佳步数(名字)
+vector<string> LEVELS;//----------------------关卡目录(名字)
+string CHOSEN;//------------------------------选的关卡(名字)
+vector<string> MAP;//-------------------------地图
+int px,py;//---------------玩家位置
+int TARGET,ON;//-----------目标/在目标上的箱子
+int STEP;double MS;//------步/时
+
+string base_name(const string& s)//------------------去掉路径,只留文件名
 {
-    DWORD on=GetTickCount();
-    for(;;)
+    string ss;
+    size_t p=s.find_last_of("\\/");
+    ss= p==string::npos?s:s.substr(p+1);
+           p=ss.find_last_of(".");
+    return p==string::npos?ss:ss.substr(0,p);
+}
+int level_num(const string& s)//---------------------从文件名里抠出关卡号
+{
+    int n=0;
+    for(size_t i=0;i<s.size();i++)
+        if(s[i]>='0' && s[i]<='9') n=n*10+s[i]-'0';
+    return n;
+}
+void find_level()
+{
+    WIN32_FIND_DATAA a;
+    HANDLE HF=FindFirstFileA((DIR+NAME+EXTENTION).c_str(),&a);//超级拼装
+    if(HF!=INVALID_HANDLE_VALUE)
     {
-        if(GetTickCount()>ms+on)
-        {
-            break;
-        }
-        if(_kbhit()) _getch();
+        do{
+            LEVELS.push_back(base_name(a.cFileName));}//存
+        while(FindNextFileA(HF,&a));
+        FindClose(HF);
     }
-}*/
+    for(size_t i=0;i<LEVELS.size();i++) for(size_t j=i+1;j<LEVELS.size();j++)
+            if(level_num(LEVELS[i])>level_num(LEVELS[j])) swap(LEVELS[i],LEVELS[j]);//排序
+}
+
+/* ==================== 游戏存取 ==================== */
+
+void load_scores()//----------------------------------读历史最佳
+{
+    ifstream in(SCORE);
+    string name;
+    int step;double ms;
+    while(in>>name>>step>>ms)
+        BESTS[name].first  =step,
+        BESTS[name].second =ms;
+}
+bool save_score()//--破纪录才更新,返回是否新纪录
+{
+    map<string,pair<int,double> >::iterator it=BESTS.find(CHOSEN);
+    if(it!=BESTS.end())
+    {
+        if(it->second.first<STEP)                          return 0;//步数更差
+        if(it->second.first==STEP && it->second.second<=MS) return 0;//秒数不小
+    }
+    BESTS[CHOSEN].first  =STEP;
+    BESTS[CHOSEN].second =MS;
+    ofstream out("score.push_boxes");
+    for(it=BESTS.begin();it!=BESTS.end();it++)
+        out <<it->first        <<" "
+            <<it->second.first <<" "
+            <<it->second.second<<"\n";
+    return 1;
+}
+bool load_level()//读关卡文件
+{
+    ifstream in(DIR+CHOSEN+EXTENTION);//选的关卡路径
+    if(!in.is_open()) return 0;
+
+    /* ---------- 读地图 ---------- */
+    string line;
+    while(getline(in,line))
+    {
+        if(!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);//去\r
+        if( line.empty()) break;//空行
+        MAP.push_back(line);
+    }
+
+    /* ---------- 字符对应表：'原字符=显示字符' 空格隔开,只读一行 ---------- */
+    while(getline(in,line))
+    {
+        if(!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);//去\r
+        if( line.empty()) continue;
+        string t="";
+        for(size_t i=0;i<=line.size();i++)
+        {
+            if(i==line.size() || line[i]==' ' || line[i]=='\t')
+            {
+                if(t.size()>=3 && t[1]=='=')//形如 "原字符=显示字符"
+                    DISP[(unsigned char)t[0]]=t.substr(2);
+                t.clear();
+            }
+            else t+=line[i];
+        }
+        break;
+    }
+
+    /* ---------- 找箱子/玩家/目标 ---------- */
+    int BOX=0,PLAYER=0;//另外两个已经初始化了
+    for(size_t y=0;y<MAP.size();y++) for(size_t x=0;x<MAP[y].size();x++)
+    {
+        switch(MAP[y][x])
+        {
+            case '$':BOX++;                      break;
+            case '@':px=x;py=y;PLAYER++;         break;
+            case '.':TARGET++;                   break;
+            case '*':BOX++;TARGET++;ON++;        break;//箱子在目标点上
+            case '+':px=x;py=y;PLAYER++;TARGET++;break;//玩家在目标点上
+            case '#':case '7':case ' ':break;
+            default: return 0;//非法字符
+        }
+    }
+    if(MAP.empty() || px<0 || TARGET>BOX || !TARGET || PLAYER!=1) return 0;
+    return 1;
+}
 
 /* ==================== 随机函数 ====================*/
 
@@ -70,26 +180,6 @@ const char* COLOR_NAMES[16]=//-----------------------颜色模版
 {"黑色","深蓝","深绿","青色","深红","紫色","暗黄","浅灰","深灰","亮蓝","亮绿","亮青","亮红","亮紫","黄色","白色"};
 /* 0      1      2      3     4      5      6      7     8      9     10     11     12     13    14     15  */
 
-/* ==================== 游戏数据 ==================== */
-
-string DISP[256];//----------------------------------字符对应表:地图字符->显示字符
-set<pair<int,int> > BOX,TARGET;//--------------------箱子/目标点坐标
-map<string,int> SCORE_BEST;//------------------------每关历史最佳步数
-const char* LEVEL_DIR="levels";//--------------------关卡子文件夹
-
-string base_name(const string& s)//------------------去掉路径,只留文件名
-{
-    size_t p=s.find_last_of("\\/");
-    return p==string::npos?s:s.substr(p+1);
-}
-
-void init_disp()//-----------------------------------恢复默认对应表
-{
-    for(int i=0;i<256;i++) DISP[i]=string(1,(char)i);
-    DISP['0']=" ";
-    DISP[' ']=" ";
-}
-
 /* ==================== 界面 ==================== */
 
 void start_screem()//--------------------------------开始界面
@@ -99,21 +189,57 @@ void start_screem()//--------------------------------开始界面
                     printf("                     推 箱 子\n");
                     printf("=================================================\n");
     set_color(0,12);printf("[操作引导]\n");
-    set_color(0,7 );printf("  ↑↓←→  w/s/a/d ：移动\n");
+    set_color(0, 7);printf("  ↑↓←→  w/s/a/d ：移动\n");
                     printf("  ESC / Q       ：退出游戏\n");
                     printf("  把箱子全部推到目标点上就过关\n");
     set_color(0,12);printf("[温馨提醒]\n");
-    set_color(0,7 );printf("  你的控制台尽量大点，不然……\n");
+    set_color(0, 7);printf("  你的控制台尽量大点，不然……\n");
     set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0,7 );printf("  按任意键继续……\n\n");
+    set_color(0, 7);printf("  按任意键继续……\n\n");
+    fflush(stdout);
     _getch();
 }
-void end_screen(double ms,int STEP,int BEST,bool NEW_RECORD)//通关画面(带吐槽)
+string choose_level()//------------------------------选关界面
 {
     set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
     system("cls");
-    int m=ms/60000;
-    double s=(ms-m*60000)/1000.0;
+    set_color(0,10);printf("================================================\n");
+                    printf("                    选 关 卡\n");
+                    printf("================================================\n");
+    if(LEVELS.empty())
+    {
+        set_color(0,12);printf("  我关卡文件呢?\n");
+        set_color(0, 7);printf("  %s里怎么啥也没有?\n",CHOSEN.c_str());
+        system("pause");
+        return "";
+    }
+    for(size_t i=0;i<LEVELS.size();i++)
+    {
+        set_color(0,14);printf("  %2d. ",i+1);
+        set_color(0, 7);printf("%-7s",LEVELS[i].c_str());
+        map<string,pair<int,double> >::iterator it=BESTS.find(LEVELS[i]);
+        if(it!=BESTS.end()){
+            set_color(0,10);printf("  最佳: %3d 步  用时 %8.4f 秒",it->second.first,it->second.second);}
+        else{
+            set_color(0, 8);printf("                     还没人征服过");}
+        putchar('\n');
+    }
+    set_color(0,11);printf("-------------------------------------------------\n");
+    set_color(0, 7);printf("  输入编号选关，乱输我直接给你退了: ");
+    fflush(stdout);
+    string s;
+    getline(cin,s);
+    int n=atoi(s.c_str());
+    if(n>=1 && n<=(int)LEVELS.size()) return LEVELS[n-1];
+    return "";
+}
+void end_screen()//----------------------------------通关画面
+{
+    set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
+    system("cls");
+    int m=MS/60000;
+    double s=(MS-m*60000)/1000.0;
+    bool NEW=save_score();
 
     set_color(0,10);printf("\n================================================\n");
     set_color(0,14);printf("            * * *  ");
@@ -123,25 +249,27 @@ void end_screen(double ms,int STEP,int BEST,bool NEW_RECORD)//通关画面(带�
     set_color(0,14);printf("          *    *    *    *    *    *\n");
                     printf("        *      Y O U   W I N ! !     *\n");
                     printf("          *    *    *    *    *    *\n\n");
-    set_color(0,7 );printf("           通关总耗时： ");
-    if(m>0)
-    {set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
-    else
-    {set_color(0,11);printf("%.4lf 秒\n",s);}
-    set_color(0,7 );printf("           消耗步数： ");
-    set_color(0,11);printf("%d 步\n",STEP);
-    set_color(0,7 );printf("           历史最佳： ");
-    if(NEW_RECORD)
-    {set_color(0,10);printf("%d 步   新纪录！裱起来！\n",STEP);}
-    else
-    {set_color(0,11);printf("%d 步\n",BEST);}
-    set_color(0,13);
+    set_color(0, 7);printf("  通关总耗时： ");
+    if(m>0){
+        set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
+    else{
+        set_color(0,11);printf("%.4lf 秒\n",s);}
+
+        set_color(0, 7);printf("  消耗步数: ");
+        set_color(0,11);printf("%d 步\n",STEP);
+        set_color(0, 7);printf("  历史最佳: ");
+    if(NEW){
+        set_color(0,10);printf("%3d 步 %8.4lf 秒  新纪录！裱起来！\n",STEP,MS);}
+    else{
+        set_color(0,11);printf("%3d 步 %8.4lf 秒\n",BESTS[CHOSEN].first,BESTS[CHOSEN].second);}
+    /*set_color(0,13);
          if(STEP<=10 )printf("           吐槽：你开了吧？\n");
     else if(STEP<=30 )printf("           吐槽：有点东西。\n");
     else if(STEP<=60 )printf("           吐槽：中规中矩，还能更快。\n");
     else if(STEP<=100)printf("           吐槽：箱子都替你着急。\n");
-    else              printf("           吐槽：地板都被你磨出火星子了。\n");
-    set_color(0,7 );printf("  按 ENTER 键继续……");
+    else              printf("           吐槽：地板都被你磨出火星子了。\n");*/
+    set_color(0, 7);printf("  按 ENTER 键继续……");
+    fflush(stdout);
     for(;;)
     {
         set_color(0,Rand_color());
@@ -152,183 +280,67 @@ void end_screen(double ms,int STEP,int BEST,bool NEW_RECORD)//通关画面(带�
     }
     gotoxy(0,14);//光标返回
 }
-int level_no(const string& s)//----------------------从文件名里抠出关卡号
-{
-    int n=0;
-    for(size_t i=0;i<s.size();i++)
-        if(s[i]>='0' && s[i]<='9') n=n*10+s[i]-'0';
-    return n;
-}
-string choose_level()//------------------------------选关界面
-{
-    /* ---------- 扫描 levels 子文件夹下的 level*.push_boxes ---------- */
-    vector<string> LEVELS;
-    WIN32_FIND_DATAA a;
-    HANDLE HF=FindFirstFileA((string(LEVEL_DIR)+"\\level*.push_boxes").c_str(),&a);
-    if(HF!=INVALID_HANDLE_VALUE)
-    {
-        do{LEVELS.push_back(a.cFileName);}while(FindNextFileA(HF,&a));
-        FindClose(HF);
-    }
-    /* 按关卡号排序,不然 10 会排到 level2 前面 */
-    for(size_t i=0;i<LEVELS.size();i++)
-        for(size_t j=i+1;j<LEVELS.size();j++)
-            if(level_no(LEVELS[i])>level_no(LEVELS[j])) swap(LEVELS[i],LEVELS[j]);
-
-    set_color(0,7);
-    system("cls");
-    set_color(0,10);printf("================================================\n");
-                    printf("                    选 关 卡\n");
-                    printf("================================================\n");
-    if(LEVELS.empty())
-    {
-        set_color(0,12);printf("  我关卡文件呢?\n");
-        set_color(0,7 );printf("  %s里怎么啥也没有?\n",LEVEL_DIR);
-        system("pause");
-        return "";
-    }
-    for(size_t i=0;i<LEVELS.size();i++)
-    {
-        set_color(0,14);printf("  %2d. ",(int)i+1);
-        set_color(0,7 );printf("%-24s",LEVELS[i].c_str());
-        map<string,int>::iterator it=SCORE_BEST.find(LEVELS[i]);
-        if(it!=SCORE_BEST.end())
-        {set_color(0,10);printf("  最佳：%d 步",it->second);}
-        else
-        {set_color(0,8 );printf("  还没人征服过");}
-        putchar('\n');
-    }
-    set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0,7 );printf("  输入编号选关，输 0 退出游戏： ");
-    fflush(stdout);
-    string s;
-    getline(cin,s);
-    int n=atoi(s.c_str());
-    if(n>=1 && n<=(int)LEVELS.size()) return string(LEVEL_DIR)+"\\"+LEVELS[n-1];
-    return "";
-}
-
-/* ==================== 游戏存取 ==================== */
-
-void load_scores()//----------------------------------读历史最佳
-{
-    SCORE_BEST.clear();
-    ifstream in("score.push_boxes");
-    string name;
-    int step;
-    while(in>>name>>step) SCORE_BEST[name]=step;
-}
-bool save_score(const string& LEVEL_NAME,int STEP)//--破纪录才更新,返回是否新纪录
-{
-    map<string,int>::iterator it=SCORE_BEST.find(LEVEL_NAME);
-    if(it!=SCORE_BEST.end() && it->second<=STEP) return 0;
-    SCORE_BEST[LEVEL_NAME]=STEP;
-    ofstream out("score.push_boxes");
-    for(it=SCORE_BEST.begin();it!=SCORE_BEST.end();it++)
-        out<<it->first<<" "<<it->second<<"\n";
-    return 1;
-}
-bool load_level(const string& LEVEL_NAME,vector<string>& MAP,int& px,int& py)//读关卡文件
-{
-    ifstream in(LEVEL_NAME.c_str());
-    if(!in.is_open()) return 0;
-
-    init_disp();//每关先恢复默认对应表
-    MAP.clear();BOX.clear();TARGET.clear();
-    px=-1;py=-1;
-
-    /* ---------- 地图部分：读到空行为止 ---------- */
-    vector<string> RAW;
-    string line;
-    size_t W=0;
-    while(getline(in,line))
-    {
-        if(!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);
-        if(line.empty()) break;//空行后面是字符对应表
-        RAW.push_back(line);
-        if(line.size()>W) W=line.size();
-    }
-
-    /* ---------- 字符对应表：'原字符=显示字符' 空格隔开,只读一行 ---------- */
-    while(getline(in,line))
-    {
-        if(!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);
-        if(line.empty()) continue;
-        string t;
-        for(size_t i=0;i<=line.size();i++)
-        {
-            if(i==line.size() || line[i]==' ' || line[i]=='\t')
-            {
-                if(t.size()>=3 && t[1]=='=')//形如 "原字符=显示字符"
-                    DISP[(unsigned char)t[0]]=t.substr(2);
-                t.clear();
-            }
-            else t+=line[i];
-        }
-        break;
-    }
-
-    /* ---------- 补齐成矩形地图,顺便把箱子/玩家/目标点抠出来 ---------- */
-    for(size_t y=0;y<RAW.size();y++)
-    {
-        string row=RAW[y];
-        while(row.size()<W) row+='0';//0=空格,补齐
-        for(size_t x=0;x<W;x++)
-        {
-            char c=row[x];
-            pair<int,int> P=make_pair((int)x,(int)y);
-                 if(c=='0') c=' ';
-            else if(c=='$') {BOX.insert(P);        c=' ';}
-            else if(c=='@') {px=(int)x;py=(int)y;  c=' ';}
-            else if(c=='.') {TARGET.insert(P);     c=' ';}
-            else if(c=='*') {BOX.insert(P);TARGET.insert(P);c=' ';}//箱子在目标点上
-            else if(c=='+') {px=(int)x;py=(int)y;TARGET.insert(P);c=' ';}//玩家在目标点上
-            row[x]=c;
-        }
-        MAP.push_back(row);
-    }
-    if(MAP.empty() || px<0 || TARGET.empty()) return 0;
-    return 1;
-}
 
 /* ==================== 绘制地图 ==================== */
 
-void draw_cell(const vector<string>& MAP,int x,int y,int px,int py)//画一格
+void draw_cell(int x,int y)//------------------------画一格
 {
-    pair<int,int> P=make_pair(x,y);
-    gotoxy((short)x,(short)y);
-    if(x==px && y==py)
-    {set_color(0,11);fputs(DISP['@'].c_str(),stdout);}
-    else if(BOX.count(P))
+    gotoxy(x,y);
+    switch(MAP[y][x])
     {
-        if(TARGET.count(P)) {set_color(0,10);fputs(DISP['$'].c_str(),stdout);}//归位:绿
-        else                {set_color(0,14);fputs(DISP['$'].c_str(),stdout);}//没归位:黄
+        case '$':set_color(0,14);fputs(DISP['$'].c_str(),stdout);break;//没归位:黄
+        case '@':set_color(0,11);fputs(DISP['@'].c_str(),stdout);break;
+        case '.':set_color(0,12);fputs(DISP['.'].c_str(),stdout);break;
+        case '*':set_color(0,10);fputs(DISP['*'].c_str(),stdout);break;//归位:绿
+        case '+':set_color(0,12);fputs(DISP['+'].c_str(),stdout);break;//玩家在目标:红
+        case '#':set_color(0,15);fputs(DISP['#'].c_str(),stdout);break;
+        case '7':set_color(0, 8);fputs(DISP['7'].c_str(),stdout);break;
+        case ' ':set_color(0, 0);putchar(' ');                   break;
     }
-    else if(TARGET.count(P))    {set_color(0,12);fputs(DISP['.'].c_str(),stdout);}
-    else if(MAP[y][x]=='#')     {set_color(0,15);fputs(DISP['#'].c_str(),stdout);}
-    else if(MAP[y][x]=='7')     {set_color(0, 8);fputs(DISP['7'].c_str(),stdout);}
-    else                        {set_color(0, 0);putchar(' ');}
 }
-void draw_map(const vector<string>& MAP,int px,int py)//绘制整个地图
+void draw_map()//------------------------------------绘制整个地图
 {
+    system("cls");
     for(int y=0;y<(int)MAP.size();y++)
         for(int x=0;x<(int)MAP[y].size();x++)
-            draw_cell(MAP,x,y,px,py);
+            draw_cell(x,y);
 }
 
 /* ==================== 运行游戏 ==================== */
 
-void run_game(vector<string>& MAP,int px,int py,const string& LEVEL_NAME)
+void map_change(int x,int y,int nx,int ny)//---------修改地图
 {
-    int GH=MAP.size();
-    int GW=MAP[0].size();
-
+    switch(MAP[y][x])
+    {
+        case '$': switch(MAP[ny][nx])
+            {
+                case '.':MAP[ny][nx]='*';ON++;break;
+                case ' ':MAP[ny][nx]='$';break;
+            }MAP[y][x]=' ';break;
+        case '@': switch(MAP[ny][nx])
+            {
+                case '.':MAP[ny][nx]='+';break;
+                case ' ':MAP[ny][nx]='@';break;
+            }MAP[y][x]=' ';break;
+        case '*': switch(MAP[ny][nx])
+            {
+                case '.':MAP[ny][nx]='*';ON++;break;
+                case ' ':MAP[ny][nx]='$';break;
+            }MAP[y][x]='.';ON--;break;
+        case '+': switch(MAP[ny][nx])
+            {
+                case '.':MAP[ny][nx]='+';break;
+                case ' ':MAP[ny][nx]='@';break;
+            }MAP[y][x]='.';break;
+    }
+}
+void run_game()//------------------------------------进行游戏
+{
     LARGE_INTEGER frequency,start,end;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);//开始计时
 
-    int STEP=0;
-    int key,dx,dy,k,nx,ny,bx=0,by=0;
+    int key,dx,dy,nx,ny,bx,by;
     bool PUSHED;
     for(;;)//主循环
     {
@@ -342,58 +354,71 @@ void run_game(vector<string>& MAP,int px,int py,const string& LEVEL_NAME)
         }
 
         dx=0,dy=0;
-        if(key==0 || key==224)// 功能键 / 方向键
+        switch(key)
         {
-            k=_getch();
-                 if(k==72) dy=-1;// ↑
-            else if(k==80) dy= 1;// ↓
-            else if(k==75) dx=-1;// ←
-            else if(k==77) dx= 1;// →
+            case 0:case 224:// 功能键 / 方向键
+                key=_getch();
+                switch(key)
+                {
+                    case 72:  dy=-1;break;// ↑
+                    case 80:  dy= 1;break;// ↓
+                    case 75:  dx=-1;break;// ←
+                    case 77:  dx= 1;break;// →
+                }break;
+            case 'w':case 'W':dy=-1;break;
+            case 's':case 'S':dy= 1;break;
+            case 'a':case 'A':dx=-1;break;
+            case 'd':case 'D':dx= 1;break;
         }
-        else if(key=='w' || key=='W') dy=-1;
-        else if(key=='s' || key=='S') dy= 1;
-        else if(key=='a' || key=='A') dx=-1;
-        else if(key=='d' || key=='D') dx= 1;
         if(dx==0 && dy==0) continue;
 
         nx=px+dx;ny=py+dy;
-        if(nx<0 || ny<0 || nx>=GW || ny>=GH)     continue;
-        if(MAP[ny][nx]=='#' || MAP[ny][nx]=='7') continue;//撞墙/撞边界
+        if(nx<0 || ny<0)                         continue;
+        if(MAP[ny][nx]=='#' || MAP[ny][nx]=='7') continue;//撞墙/边界
 
         PUSHED=0;
-        pair<int,int> NP=make_pair(nx,ny);
-        if(BOX.count(NP))//前面是箱子,得看看箱子前面能不能走
+        if(MAP[ny][nx]=='$' || MAP[ny][nx]=='*')//前面是箱子
         {
             bx=nx+dx;by=ny+dy;
-            if(bx<0 || by<0 || bx>=GW || by>=GH)     continue;
-            if(MAP[by][bx]=='#' || MAP[by][bx]=='7') continue;//箱子撞墙
-            if(BOX.count(make_pair(bx,by)))          continue;//箱子顶箱子,推不动
-            BOX.erase(NP);
-            BOX.insert(make_pair(bx,by));//推！
+            if(bx<0 || by<0)                         continue;
+            if(MAP[by][bx]=='#' || MAP[by][bx]=='7') continue;//箱子撞墙/边界
+            if(MAP[by][bx]=='$' || MAP[by][bx]=='*') continue;//箱子顶箱子
             PUSHED=1;
         }
+        if(PUSHED)
+        {
+            map_change(nx,ny,bx,by);//推！
+            draw_cell(bx,by);
+        }
+        map_change(px,py,nx,ny);//走！
+        draw_cell(nx,ny);draw_cell(px,py);
 
-        int opx=px,opy=py;
         px=nx;py=ny;STEP++;
 
-        draw_cell(MAP,opx,opy,px,py);//旧位置还原(可能是目标点)
-        if(PUSHED) draw_cell(MAP,bx,by,px,py);//箱子新位置
-        draw_cell(MAP,px ,py ,px,py);//玩家新位置
-
-        /* ---------- 全部箱子归位？ ---------- */
-        int ON=0;
-        for(set<pair<int,int> >::iterator t=TARGET.begin();t!=TARGET.end();t++)
-            if(BOX.count(*t)) ON++;
-        if(ON==(int)TARGET.size())
+        /* ---------- 判断箱子归位 ---------- */
+        if(ON==TARGET)
         {
             QueryPerformanceCounter(&end);//结束计时
-            double ms=(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000;
-            string BASE=base_name(LEVEL_NAME);//分数只记纯文件名,不带路径
-            bool NEW_RECORD=save_score(BASE,STEP);
-            end_screen(ms,STEP,SCORE_BEST[BASE],NEW_RECORD);
+            MS=(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000;
+            end_screen();
             return;
         }
     }
+}
+
+/* ==================== 初始化 ==================== */
+
+inline void init()
+{
+    px=py=-1;
+    STEP=ON=TARGET=0;
+    for(int i=0;i<256;i++) DISP[i]=string(1,i);//映射
+    //█ ▣ ◎ ☻
+    BESTS.clear();
+    LEVELS.clear();
+    MAP.clear();
+    load_scores();
+    find_level();
 }
 
 /* ==================== 主函数 ==================== */
@@ -404,43 +429,42 @@ int main()
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
     hide_cursor();
-    load_scores();
 
     start_screem();
+    int key;
     for(;;)
     {
-        string LEVEL_NAME=choose_level();
-        if(LEVEL_NAME.empty()) break;
+        init();
 
-        vector<string> MAP;
-        int px=0,py=0;
-        if(!load_level(LEVEL_NAME,MAP,px,py))
+        CHOSEN=choose_level();
+        if(CHOSEN.empty()) break;
+
+        if(!load_level())
         {
-            set_color(0,12);printf("  %s 读不出来，文件是不是坏了？\n",LEVEL_NAME.c_str());
-            set_color(0,7 );system("pause");
+            set_color(0,12);printf("  %s 读不出来，文件是不是坏了?\n",DIR.c_str());
+            set_color(0, 7);system("pause");
             continue;
         }
 
-        system("cls");
-        draw_map(MAP,px,py);
+        draw_map();
 
         /* ---------- 底部简略引导 ---------- */
-        gotoxy(0,(short)(MAP.size()+1));
+        gotoxy(0,MAP.size()+1);
         set_color(0,7);
-        printf("  ↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | 把箱子全部推到目标点上 ");
+        printf("  ↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | 把箱子全部推到目标点上");
 
-        run_game(MAP,px,py,LEVEL_NAME);
+        run_game();
 
         /* ---------- 游戏结束提示 ---------- */
         set_color(0,11);printf("-------------------------------------------------\n");
-        set_color(0,7 );printf("  按 ESC 或 Q 退出游戏，按任意键返回选关\n");
+        set_color(0, 7);printf("  按 ESC 或 Q 退出游戏，按任意键返回选关\n");
         fflush(stdout);
-        int key=_getch();
+        key=_getch();
         if(key==27 || key=='q' || key=='Q') break;
     }
     set_color(0,7);
     return 0;
-}//我还没改完
+}
 /*依旧学习
 1.ifstream
 2.文件搜索
