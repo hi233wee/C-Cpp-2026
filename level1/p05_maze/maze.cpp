@@ -81,15 +81,15 @@ void start_screem()//--------------------------------开始界面
                     printf("                 迷 宫 小 游 戏\n");
                     printf("=================================================\n");
     set_color(0,12);printf("[操作引导]\n");
-    set_color(0,7 );printf("  ↑↓←→  w/s/a/d ：移动\n");
+    set_color(0, 7);printf("  ↑↓←→  w/s/a/d ：移动\n");
                     printf("  ESC / Q       ：退出游戏\n");
                     printf("  绿色的 ");
     set_color(0,10);putchar('S');
-    set_color(0,7 );printf(" 是入口(起点)，红色的 ");
+    set_color(0, 7);printf(" 是入口(起点)，红色的 ");
     set_color(0,12);putchar('E');
-    set_color(0,7 );printf(" 是出口(终点)\n");
+    set_color(0, 7);printf(" 是出口(终点)\n");
     set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0,7 );printf("  接下来自定义游戏外观：\n\n");
+    set_color(0, 7);printf("  接下来自定义游戏外观：\n\n");
 }
 void end_screen(double ms)//-------------------------通关画面
 {
@@ -106,12 +106,12 @@ void end_screen(double ms)//-------------------------通关画面
     set_color(0,14);printf("          *    *    *    *    *    *\n");
                     printf("        *      Y O U   W I N ! !     *\n");
                     printf("          *    *    *    *    *    *\n\n");
-    set_color(0,7 );printf("           通关总耗时： ");
-    if(m>0)
-    {set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
-    else
-    {set_color(0,11);printf("%.4lf 秒\n",s);}
-    set_color(0,7 );printf("\n  按 ENTER 键继续……");
+    set_color(0, 7);printf("           通关总耗时： ");
+    if(m>0){
+        set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
+    else{
+        set_color(0,11);printf("%.4lf 秒\n",s);}
+    set_color(0, 7);printf("\n  按 ENTER 键继续……");
     //wait(1000);
     for(;;)
     {
@@ -137,7 +137,7 @@ char pick_symbol()//---------------------------------选角
         getline(cin,s);
         if(s.empty())   return '7' ;
         if(s.size()==1) return s[0];
-        set_color(0,7 );printf("你……我……叫你输 ");
+        set_color(0, 7);printf("你……我……叫你输 ");
         set_color(0,12);printf("一个！常见的！\n");
     }
 }
@@ -154,9 +154,9 @@ int pick_color(const string& title, int DEf_COlOR)//-选颜色
 {
     for(;;)
     {
-        set_color(0,7        );printf("-------请选择%s(0-15,回车默认%d:",title.c_str(),DEf_COlOR);
+        set_color(0,        7);printf("-------请选择%s(0-15,回车默认%d:",title.c_str(),DEf_COlOR);
         set_color(0,DEf_COlOR);printf("%s",COLOR_NAMES[DEf_COlOR]);
-        set_color(0,7        );printf(")-------\n");
+        set_color(0,        7);printf(")-------\n");
         show_color_table();
         printf("输入编号: ");
         fflush(stdout);
@@ -165,9 +165,9 @@ int pick_color(const string& title, int DEf_COlOR)//-选颜色
         if(s.empty()) return DEf_COlOR;
         int n=atoi(s.c_str());//转换成数字
         if(n>=0&&n<=15) return n;
-        set_color(0,7 );printf("你瞎吗? ");
+        set_color(0, 7);printf("你瞎吗? ");
         set_color(0,12);printf("0-15");
-        set_color(0,7 );printf("看不见?\n");
+        set_color(0, 7);printf("看不见?\n");
     }
 }
 
