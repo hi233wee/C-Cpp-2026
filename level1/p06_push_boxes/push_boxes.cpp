@@ -466,7 +466,8 @@ int main()
     return 0;
 }
 /*依旧学习
-1.ifstream
+1.ifstream   ofstream
 2.文件搜索
 3.do{}while();
+4.set存变量
 */
