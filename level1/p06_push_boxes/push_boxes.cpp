@@ -13,7 +13,48 @@
 #include<fstream>
 #include<set>
 #include<map>
+#include<filesystem>
 using namespace std;
+
+/* ==================== 随机函数 ====================*/
+
+random_device RD;
+mt19937 RNG(RD());
+uniform_int_distribution<int> RAND_COLOR(1,15);//1-15随机颜色,避开黑色
+inline int Rand_color()
+{
+    return RAND_COLOR(RNG);
+}
+
+/* ==================== 控制台工具 ==================== */
+
+HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
+void hide_cursor()//---------------------------------隐藏光标
+{
+    CONSOLE_CURSOR_INFO a;
+    a.bVisible=0;
+    a.dwSize=1;
+    SetConsoleCursorInfo(handle_output,&a);
+}
+void gotoxy(short x,short y)//-----------------------移动光标
+{
+    COORD a={x,y};
+    SetConsoleCursorPosition(handle_output,a);
+}
+void get_console_size(int& w,int& h)//---------------获取控制台宽高
+{
+    CONSOLE_SCREEN_BUFFER_INFO a;
+    GetConsoleScreenBufferInfo(handle_output,&a);
+    w=a.srWindow.Right-a.srWindow.Left+1;
+    h=a.srWindow.Bottom-a.srWindow.Top+1;
+}
+void set_color(int BG,int FG)//----------------------设置颜色；BG背景；FG前景
+{
+    SetConsoleTextAttribute(handle_output,(WORD)((BG<<4)|FG));
+}
+const char* COLOR_NAMES[16]=//-----------------------颜色模版
+{"黑色","深蓝","深绿","青色","深红","紫色","暗黄","浅灰","深灰","亮蓝","亮绿","亮青","亮红","亮紫","黄色","白色"};
+/* 0      1      2      3     4      5      6      7     8      9     10     11     12     13    14     15  */
 
 /* ==================== 游戏数据 ==================== */
 
@@ -30,13 +71,12 @@ int px,py;//---------------玩家位置
 int TARGET,ON;//-----------目标/在目标上的箱子
 int STEP,MS;//-------------步/时
 
-string base_name(const string& s)//------------------去掉路径,只留文件名
+string base_name(string s)//-------------------------去掉路径,只留文件名
 {
-    string ss;
     size_t p=s.find_last_of("\\/");
-    ss= p==string::npos?s:s.substr(p+1);
-           p=ss.find_last_of(".");
-    return p==string::npos?ss:ss.substr(0,p);
+        s= p==string::npos?s:s.substr(p+1);
+           p=s.find_last_of(".");
+    return p==string::npos?s:s.substr(0,p);
 }
 int level_num(const string& s)//---------------------从文件名里抠出关卡号
 {
@@ -69,7 +109,7 @@ void load_scores()//----------------------------------读历史最佳
     int step,ms;
     while(in>>name>>step>>ms)
         BESTS[name].first  =step,
-        BESTS[name].second =ms;
+        BESTS[name].second =ms  ;
 }
 bool save_score()//--破纪录才更新,返回是否新纪录
 {
@@ -80,12 +120,15 @@ bool save_score()//--破纪录才更新,返回是否新纪录
         if(it->second.first==STEP && it->second.second<=MS) return 0;//秒数不小
     }
     BESTS[CHOSEN].first  =STEP;
-    BESTS[CHOSEN].second =MS;
-    ofstream out(SCORE);
+    BESTS[CHOSEN].second =MS  ;
+    ofstream out(SCORE+".tmp");//临时文件,防止写到一半停了
     for(it=BESTS.begin();it!=BESTS.end();it++)
         out <<it->first        <<" "
             <<it->second.first <<" "
             <<it->second.second<<"\n";
+    rename((SCORE+".tmp").c_str(),SCORE.c_str());//合并
+    out.close();//防止阻碍删除
+    remove((SCORE+".tmp").c_str());
     return 1;
 }
 bool load_level()//----------------------------------读关卡文件
@@ -129,8 +172,8 @@ bool load_level()//----------------------------------读关卡文件
         {
             case '$':BOX++;                      break;
             case '@':px=x;py=y;PLAYER++;         break;
-            case '.':TARGET++;                   break;
-            case '*':BOX++;TARGET++;ON++;        break;//箱子在目标点上
+            case '.':                   TARGET++;break;
+            case '*':BOX++;ON++;        TARGET++;break;//箱子在目标点上
             case '+':px=x;py=y;PLAYER++;TARGET++;break;//玩家在目标点上
             case '#':case '7':case ' ':break;
             default: return 0;//非法字符
@@ -140,49 +183,9 @@ bool load_level()//----------------------------------读关卡文件
     return 1;
 }
 
-/* ==================== 随机函数 ====================*/
-
-random_device RD;
-mt19937 RNG(RD());
-uniform_int_distribution<int> RAND_COLOR(1,15);//1-15随机颜色,避开黑色
-inline int Rand_color()
-{
-    return RAND_COLOR(RNG);
-}
-
-/* ==================== 控制台工具 ==================== */
-
-HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
-void hide_cursor()//---------------------------------隐藏光标
-{
-    CONSOLE_CURSOR_INFO a;
-    a.bVisible=0;
-    a.dwSize=1;
-    SetConsoleCursorInfo(handle_output,&a);
-}
-void gotoxy(short x,short y)//-----------------------移动光标
-{
-    COORD a={x,y};
-    SetConsoleCursorPosition(handle_output,a);
-}
-void get_console_size(int& w,int& h)//---------------获取控制台宽高
-{
-    CONSOLE_SCREEN_BUFFER_INFO a;
-    GetConsoleScreenBufferInfo(handle_output,&a);
-    w=a.srWindow.Right-a.srWindow.Left+1;
-    h=a.srWindow.Bottom-a.srWindow.Top+1;
-}
-void set_color(int BG,int FG)//----------------------设置颜色；BG背景；FG前景
-{
-    SetConsoleTextAttribute(handle_output,(WORD)((BG<<4)|FG));
-}
-const char* COLOR_NAMES[16]=//-----------------------颜色模版
-{"黑色","深蓝","深绿","青色","深红","紫色","暗黄","浅灰","深灰","亮蓝","亮绿","亮青","亮红","亮紫","黄色","白色"};
-/* 0      1      2      3     4      5      6      7     8      9     10     11     12     13    14     15  */
-
 /* ==================== 界面 ==================== */
 
-void start_scream()//--------------------------------开始界面
+void start_screem()//--------------------------------开始界面
 {
     system("cls");
     set_color(0,10);printf("=================================================\n");
@@ -237,9 +240,9 @@ void end_screen()//----------------------------------通关画面
 {
     set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
     system("cls");
-    int m=MS/60000;
+    int    m=MS/60000;
     double s=(MS-m*60000)/1000.0;
-    bool NEW=save_score();
+    bool   NEW=save_score();
 
     set_color(0,10);printf("\n================================================\n");
     set_color(0,14);printf("            * * *  ");
@@ -295,9 +298,8 @@ void draw_cell(int x,int y)//------------------------画一格
 void draw_map()//------------------------------------绘制整个地图
 {
     system("cls");
-    for(size_t y=0;y<MAP.size();y++)
-        for(size_t x=0;x<MAP[y].size();x++)
-            draw_cell(x,y);
+    for(size_t y=0;y<MAP.size();y++) for(size_t x=0;x<MAP[y].size();x++)
+        draw_cell(x,y);
 }
 
 /* ==================== 运行游戏 ==================== */
@@ -362,14 +364,14 @@ void run_game()//------------------------------------进行游戏
         if(dx==0 && dy==0) continue;
 
         nx=px+dx;ny=py+dy;
-        if(ny<0 || ny>=(int)MAP.size() || nx<0 || nx>=(int)MAP[ny].size())                         continue;
+        if(ny<0 || ny>=(int)MAP.size() || nx<0 || nx>=(int)MAP[ny].size()) continue;//防止越界
         if(MAP[ny][nx]=='#' || MAP[ny][nx]=='7') continue;//撞墙/边界
 
         PUSHED=0;
         if(MAP[ny][nx]=='$' || MAP[ny][nx]=='*')//前面是箱子
         {
             bx=nx+dx;by=ny+dy;
-            if(by<0 || by>=(int)MAP.size() || bx<0 || bx>=(int)MAP[by].size())                         continue;
+            if(by<0 || by>=(int)MAP.size() || bx<0 || bx>=(int)MAP[by].size()) continue;//防止越界
             if(MAP[by][bx]=='#' || MAP[by][bx]=='7') continue;//箱子撞墙/边界
             if(MAP[by][bx]=='$' || MAP[by][bx]=='*') continue;//箱子顶箱子
             PUSHED=1;
@@ -402,12 +404,12 @@ inline void init()
     px=py=-1;
     STEP=ON=TARGET=0;
     for(int i=0;i<256;i++) DISP[i]=string(1,i);//映射
-    //墙#▓  边界7▒  箱子$☒  *☑  目标.○  玩家@☻  +☺//
-    BESTS.clear();
+    //墙#▓  边界7▒  箱子$□  *■  目标.○  玩家@☻  +☺//
+     BESTS.clear();
     LEVELS.clear();
-    MAP.clear();
+       MAP.clear();
     load_scores();
-    find_level();
+     find_level();
 }
 
 /* ==================== 主函数 ==================== */
@@ -419,7 +421,7 @@ int main()
     SetConsoleCP(65001);
     hide_cursor();
 
-    start_scream();
+    start_screem();
     int key;
     for(;;)
     {
