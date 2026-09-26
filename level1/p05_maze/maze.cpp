@@ -137,7 +137,7 @@ char pick_symbol()//---------------------------------选角
         fflush(stdout);
         string s;
         getline(cin,s);
-        if(s.empty())   return '7' ;
+        if( s.empty() ) return '7' ;
         if(s.size()==1) return s[0];
         set_color(0, 7);printf("你……我……叫你输 ");
         set_color(0,12);printf("一个！常见的！\n");
@@ -232,9 +232,9 @@ void draw_maze(const vector<string>& maze,int WALL_COLOR,int BG_COLOR)
             c=maze[y][x];
                  if(c=='#') {set_color(BG_COLOR,WALL_COLOR);fputs("█",stdout);}
             else if(c=='7') {set_color(BG_COLOR,WALL_COLOR);fputs("▒",stdout);}
-            else if(c==' ') {set_color(BG_COLOR,BG_COLOR  );putchar(' ');     }
-            else if(c=='S') {set_color(BG_COLOR,10        );putchar('S');     }
-            else            {set_color(BG_COLOR,12        );putchar('E');     }
+            else if(c==' ') {set_color(BG_COLOR,  BG_COLOR);putchar(' ');     }
+            else if(c=='S') {set_color(BG_COLOR,        10);putchar('S');     }
+            else            {set_color(BG_COLOR,        12);putchar('E');     }
         }
     }
 }
@@ -286,9 +286,9 @@ void run_game(const vector<string>& maze,char PLAYER,int PLAYER_COLOR,int WALL_C
         if (maze[ny][nx]=='#') continue;//撞墙
 
         gotoxy(px,py);
-             if(maze[py][px]=='S') {set_color(BG_COLOR,10        );putchar('S');     }
+             if(maze[py][px]=='S') {set_color(BG_COLOR,        10);putchar('S');     }
         else if(maze[py][px]=='7') {set_color(BG_COLOR,WALL_COLOR);fputs("▒",stdout);}
-        else                       {set_color(BG_COLOR,BG_COLOR  );putchar(' ');     }
+        else                       {set_color(BG_COLOR,  BG_COLOR);putchar(' ');     }
 
         px=nx;py=ny;
         if(maze[py][px]=='E')
@@ -321,8 +321,8 @@ int main()
         /* ---------- 自定义：符号 / 颜色 ---------- */
         char PLAYER      =pick_symbol();
         int  PLAYER_COLOR=pick_color("玩家的颜色",10);
-        int  WALL_COLOR  =pick_color("墙壁的颜色",15);
-        int  BG_COLOR    =pick_color("背景的颜色", 0);
+        int    WALL_COLOR=pick_color("墙壁的颜色",15);
+        int      BG_COLOR=pick_color("背景的颜色", 0);
 
         /* ---------- 下面这行能进去真的是…… ---------- */
         if(PLAYER_COLOR==BG_COLOR || WALL_COLOR==BG_COLOR)
