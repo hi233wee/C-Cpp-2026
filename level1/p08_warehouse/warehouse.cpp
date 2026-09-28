@@ -143,6 +143,7 @@ void update(string name,LL n)//----------------------更新库存数据(区分�
     //[&]所有外部引用捕获,[=]值捕获,[&x][=x]只捕获x,[=,&x]默认 值捕获,x引用//本身固定传入const &
     if(it==stock.end())
     {
+        if(n<0) return;
         things a;
         a.name =name;
         a.n    =n;
@@ -245,7 +246,7 @@ void check_screem()//--------------------------------查看
     if(page==0) page=(tmp.size()+6)/7;//越下界
     if(tmp.size()<page*7-6) page=1;   //越上界
     id=min(page*7,tmp.size());//上界+1
-    gotoxy(16,20); set_color(0, 6);printf("%4d",page);
+    gotoxy(16,20); set_color(0, 6);printf("%4zu",page);
     if(page*7>=id)//满
         for(i=page*7-7;i<id;++i)
         {
@@ -287,7 +288,7 @@ void check_screem()//--------------------------------查看
 }//ai建议我把每页显示条目数放在一个常量里，方便改，可我就要7
 bool input_screem(string&name,LL&n)
 {
-    int key;BACK:
+    BACK:
     set_color(0, 7);system("cls");
                     printf("\n┌──────────────┬──────────────┐\n│  ");
     set_color(0,10);printf("enter 确认");
@@ -320,7 +321,7 @@ bool input_screem(string&name,LL&n)
 }
 bool confirm_screem(const string&name,const LL&n)
 {
-    FlushConsoleInputBuffer(handle_output);//清空输入缓冲'\n'
+    FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));//清空输入缓冲'\n'
     set_color(0, 7);system("cls");
                     printf("\n╔═════════════════════════╗\n║ ");
     set_color(0,11);printf("你的名字：");
@@ -382,6 +383,12 @@ void out_screem()
     for(;;){
         if(! input_screem(name,n)) return;
         if(confirm_screem(name,n)) break ;
+    }
+    vector<things>::iterator it=find_if(stock.begin(),stock.end(),[&name](const things&a){return a.name==name;});
+    if(it==stock.end()){
+        set_color(0,12);printf("东西都没有你出个蛋\n");
+        then();
+        return;
     }
     update(name,-n);
     set_color(0, 7);system("cls");
