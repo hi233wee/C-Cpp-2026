@@ -49,6 +49,36 @@ void set_console_font()//----------------------------改字体
     wcscpy_s(a.FaceName,L"Lucida Console");
     SetCurrentConsoleFontEx(handle_output,FALSE,&a);
 }
+void lock_window()//---------------------------------不让动窗口大小
+{
+    HWND a=GetConsoleWindow();
+    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)&~(LONG_PTR)(WS_THICKFRAME|WS_MAXIMIZEBOX));
+    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+}
+void unlock_window()//-------------------------------解除窗口锁定
+{
+    HWND a=GetConsoleWindow();
+    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)|WS_THICKFRAME|WS_MAXIMIZEBOX);
+    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+}
+const int min_W=52;//最小宽度(选色52列)
+const int min_H=14;//最小高度(结束界面14)
+void set_console_size(SHORT W,SHORT H)//-------------设窗口和缓冲区大小
+{
+    if(W<min_W) W=min_W;
+    if(H<min_H) H=min_H;
+    COORD mx=GetLargestConsoleWindowSize(handle_output);
+    if(W>mx.X) W=mx.X;
+    if(H>mx.Y) H=mx.Y;
+    CONSOLE_SCREEN_BUFFER_INFO a;
+    GetConsoleScreenBufferInfo(handle_output,&a);
+    COORD b={a.dwSize.X<W?W:a.dwSize.X,
+             a.dwSize.Y<H?H:a.dwSize.Y};
+    SetConsoleScreenBufferSize(handle_output,b);//放大缓冲区
+    SMALL_RECT c={0,0,SHORT(W-1),SHORT(H-1)};
+    SetConsoleWindowInfo(handle_output,TRUE,&c);//设窗口大小
+    SetConsoleScreenBufferSize(handle_output,{W,H});//缩缓冲区到没有滚动条
+}
 void hide_cursor()//---------------------------------隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -81,20 +111,21 @@ const char* COLOR_NAMES[16]=//-----------------------颜色模版
 void start_screem()//--------------------------------开始界面
 {
     system("cls");
-    set_color(0,10);printf("=================================================\n");
-                    printf("                 迷 宫 小 游 戏\n");
-                    printf("=================================================\n");
-    set_color(0,12);printf("[操作引导]\n");
-    set_color(0, 7);printf("  ↑↓←→  w/s/a/d ：移动\n");
-                    printf("  ESC / Q       ：退出游戏\n");
-                    printf("  绿色的 ");
+    set_color(0,10);printf("\n =================================================\n");
+                    printf("                  迷 宫 小 游 戏\n");
+                    printf(" =================================================\n");
+    set_color(0,12);printf(" [操作引导]\n");
+    set_color(0, 7);printf("   ↑↓←→  w/s/a/d ：移动\n");
+                    printf("   ESC / Q       ：退出游戏\n");
+                    printf("   绿色的 ");
     set_color(0,10);putchar('S');
     set_color(0, 7);printf(" 是入口(起点)，红色的 ");
     set_color(0,12);putchar('E');
     set_color(0, 7);printf(" 是出口(终点)\n");
-    set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0, 7);printf("  接下来自定义游戏外观：\n\n");
-    fflush(stdout);
+    set_color(0,11);printf(" -------------------------------------------------\n");
+    set_color(0, 7);printf("   接下来自定义游戏外观：\n");
+                    printf("按任意键继续……\n");
+    _getch();
 }
 void end_screen(double ms)//-------------------------通关画面
 {
@@ -103,26 +134,25 @@ void end_screen(double ms)//-------------------------通关画面
     int m=ms/60000;
     double s=(ms-m*60000)/1000.0;
 
-    set_color(0,10);printf("\n================================================\n");
-    set_color(0,14);printf("   * * *  ");
+    set_color(0,10);printf("\n ================================================\n");
+    set_color(0,14);printf("    * * *  ");
     set_color(0,12);printf("恭 喜 你 成 功 走 出 迷 宫 !");
     set_color(0,14);printf("  * * *\n");
-    set_color(0,10);printf("================================================\n\n");
-    set_color(0,14);printf("          *    *    *    *    *    *\n");
-                    printf("        *      Y O U   W I N ! !     *\n");
-                    printf("          *    *    *    *    *    *\n\n");
-    set_color(0, 7);printf("           通关总耗时： ");
+    set_color(0,10);printf(" ================================================\n\n");
+    set_color(0,14);printf("           *    *    *    *    *    *\n");
+                    printf("         *      Y O U   W I N ! !     *\n");
+                    printf("           *    *    *    *    *    *\n\n");
+    set_color(0, 7);printf("            通关总耗时： ");
     if(m>0){
         set_color(0,11);printf("%d 分 %.4lf 秒\n",m,s);}
     else{
         set_color(0,11);printf("%.4lf 秒\n",s);}
-    set_color(0, 7);printf("\n  按 ENTER 键继续……");
-    fflush(stdout);
+    set_color(0, 7);printf("\n   按 ENTER 键继续……");
     //wait(1000);
     for(;;)
     {
         set_color(0,Rand_color());
-        gotoxy(15,6);//"Y O U   W I N ! !"的位置
+        gotoxy(16,6);//"Y O U   W I N ! !"的位置
         printf("Y O U   W I N ! !");
         Sleep(150);
         if(_kbhit()) if(_getch()=='\r') break;
@@ -134,17 +164,19 @@ void end_screen(double ms)//-------------------------通关画面
 
 char pick_symbol()//---------------------------------选角
 {
+    system("cls");
     for(;;)
     {
         set_color(0,7);
-        printf("请输入一个常见字符作为玩家符号。(回车默认 '7'): ");
-        fflush(stdout);
+        printf("\n  请输入一个常见字符作为玩家符号。(回车默认 '7'):\n  ");
         string s;
         getline(cin,s);
         if( s.empty() ) return '7' ;
         if(s.size()==1) return s[0];
-        set_color(0, 7);printf("你……我……叫你输 ");
+        set_color(0, 7);printf("  你……我……叫你输 ");
         set_color(0,12);printf("一个！常见的！\n");
+        gotoxy(0,2);cout<<string(52,' ');
+        gotoxy(0,0);
     }
 }
 void show_color_table()//----------------------------展示颜色选择
@@ -152,28 +184,31 @@ void show_color_table()//----------------------------展示颜色选择
     for (int i=0;i<16;i++)
     {
         set_color(0,7);printf("  %2d:",i);
-        set_color(0,i);printf("%s     ",COLOR_NAMES[i]);
-        if(i%4==3)putchar('\n');
+        set_color(0,i);printf("%s",COLOR_NAMES[i]);
+        if(i%4==3) putchar('\n');
+        else printf("     ");
     }
 }
-int pick_color(const string& title, int DEf_COlOR)//-选颜色
+int pick_color(const string& title, int DEf)//-选颜色
 {
+    system("cls");
     for(;;)
     {
-        set_color(0,        7);printf("-------请选择%s(0-15,回车默认%d:",title.c_str(),DEf_COlOR);
-        set_color(0,DEf_COlOR);printf("%s",COLOR_NAMES[DEf_COlOR]);
-        set_color(0,        7);printf(")-------\n");
+        set_color(0,  7);printf("\n-------请选择%s(0-15,回车默认%d:",title.c_str(),DEf);
+        set_color(0,DEf);printf("%s",COLOR_NAMES[DEf]);
+        set_color(0,  7);printf(")-------\n");
         show_color_table();
         printf("输入编号: ");
-        fflush(stdout);
         string s;
         getline(cin,s);
-        if(s.empty()) return DEf_COlOR;
+        if(s.empty()) return DEf;
         int n=atoi(s.c_str());//转换成数字
         if(n>=0&&n<=15) return n;
         set_color(0, 7);printf("你瞎吗? ");
         set_color(0,12);printf("0-15");
         set_color(0, 7);printf("看不见?\n");
+        gotoxy(0,6);cout<<string(52,' ');
+        gotoxy(0,0);
     }
 }
 
@@ -223,6 +258,7 @@ void generate_maze(vector<string>& maze,int C_ROOM,int R_ROOM)
 
 /* ==================== 绘制迷宫 ==================== */
 
+int OX,OY;//偏移量
 void draw_maze(const vector<string>& maze,int WALL_COLOR,int BG_COLOR)
 {
     int GH=maze.size();
@@ -230,7 +266,7 @@ void draw_maze(const vector<string>& maze,int WALL_COLOR,int BG_COLOR)
     char c;
     for(int y=0;y<GH;y++)
     {
-        gotoxy(0,y);
+        gotoxy(0+OX,y+OY);
         for(int x=0;x<GW;x++)
         {
             c=maze[y][x];
@@ -250,7 +286,7 @@ void run_game(const vector<string>& maze,char PLAYER,int PLAYER_COLOR,int WALL_C
     int GH=maze.size();
     int GW=maze[0].size();
     int px=2,py=1;
-    gotoxy(px,py);
+    gotoxy(px+OX,py+OY);
     set_color(BG_COLOR,PLAYER_COLOR);
     putchar(PLAYER);//玩家放到入口
 
@@ -289,7 +325,7 @@ void run_game(const vector<string>& maze,char PLAYER,int PLAYER_COLOR,int WALL_C
         if (nx<0 || ny<0 || nx>=GW || ny>=GH) continue;
         if (maze[ny][nx]=='#') continue;//撞墙
 
-        gotoxy(px,py);
+        gotoxy(px+OX,py+OY);
              if(maze[py][px]=='S') {set_color(BG_COLOR,        10);putchar('S');     }
         else if(maze[py][px]=='7') {set_color(BG_COLOR,WALL_COLOR);fputs("▒",stdout);}
         else                       {set_color(BG_COLOR,  BG_COLOR);putchar(' ');     }
@@ -299,11 +335,12 @@ void run_game(const vector<string>& maze,char PLAYER,int PLAYER_COLOR,int WALL_C
         {
             QueryPerformanceCounter(&end);//结束计时
             double sec=(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000;
+            set_console_size(0,0);
             end_screen(sec);
             return;
         }
 
-        gotoxy(px,py);
+        gotoxy(px+OX,py+OY);
         set_color(BG_COLOR,PLAYER_COLOR);
         putchar(PLAYER);//玩家移动
     }
@@ -317,6 +354,8 @@ int main()
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
     set_console_font();
+    set_console_size(0,0);
+    lock_window();
     hide_cursor();
 
     for(;;)
@@ -338,16 +377,24 @@ int main()
         }
         
         /* ---------- 迷宫大小由控制台窗口决定 ---------- */
-        int W,H;
+        unlock_window();
+        system("cls");
+        set_color(0,7);printf("\n  请调整你的窗口以决定迷宫大小\n");
+                       printf("按任意键继续……\n");
+        _getch();
+        int MW,MH,W,H;//宽高
+        get_console_size(MW,MH);
+        set_console_size(MW,MH+2);
         get_console_size(W,H);
-        int R_ROOM=(H-4)/2;//房间行列数
-        int C_ROOM=(W-3)/2;//预留: 外圈捷径 + 底部引导行
+        lock_window();
+        int R_ROOM=(MH-3)/2;//房间行列数
+        int C_ROOM=(MW-3)/2;//预留外圈捷径
+        OX=(W-MW)/2; OY=(H-MH)/2-1;
         if(R_ROOM<2 || C_ROOM<2)
         {
-            set_color(0,12);
-            printf("\n  这么小的窗口你玩啥呢\n");
-            set_color(0,7);
-            system("pause");
+            set_color(0,12);printf("  这么小的窗口你玩啥呢\n");
+            set_color(0, 7);printf("按任意键继续……\n");
+            _getch();
             return 0;
         }
 
@@ -358,16 +405,15 @@ int main()
         draw_maze(maze,WALL_COLOR,BG_COLOR);
 
         /* ---------- 底部简略引导 ---------- */
-        gotoxy(0,maze.size());
+        gotoxy((W-47)/2,H-2);
         set_color(BG_COLOR,WALL_COLOR);
-        printf("  ↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | S 入口  E 出口 ");
+        printf("↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | S 入口  E 出口 ");//47
 
         run_game(maze,PLAYER,PLAYER_COLOR,WALL_COLOR,BG_COLOR);
 
         /* ---------- 游戏结束提示 ---------- */
         set_color(0,11);printf("-------------------------------------------------\n");
         set_color(0,7 );printf("  按 ESC 或 Q 退出游戏，按任意键返回主菜单\n");
-        fflush(stdout);
         int key=_getch();
         if(key==27 || key=='q' || key=='Q') break;
     }

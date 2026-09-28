@@ -36,6 +36,30 @@ void set_console_font()//----------------------------改字体
     wcscpy_s(a.FaceName,L"Lucida Console");
     SetCurrentConsoleFontEx(handle_output,FALSE,&a);
 }
+void lock_window()//---------------------------------不让动窗口大小
+{
+    HWND a=GetConsoleWindow();
+    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)&~(LONG_PTR)(WS_THICKFRAME|WS_MAXIMIZEBOX));
+    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+}
+const int min_W=51;//最小宽度(底部提示49列)
+const int min_H=14;//最小高度(结束界面13)
+void set_console_size(SHORT W,SHORT H)//-------------设窗口和缓冲区大小
+{
+    if(W<min_W) W=min_W;
+    if(H<min_H) H=min_H;
+    COORD mx=GetLargestConsoleWindowSize(handle_output);
+    if(W>mx.X) W=mx.X;
+    if(H>mx.Y) H=mx.Y;
+    CONSOLE_SCREEN_BUFFER_INFO a;
+    GetConsoleScreenBufferInfo(handle_output,&a);
+    COORD b={a.dwSize.X<W?W:a.dwSize.X,
+             a.dwSize.Y<H?H:a.dwSize.Y};
+    SetConsoleScreenBufferSize(handle_output,b);//放大缓冲区
+    SMALL_RECT c={0,0,SHORT(W-1),SHORT(H-1)};
+    SetConsoleWindowInfo(handle_output,TRUE,&c);//设窗口大小
+    SetConsoleScreenBufferSize(handle_output,{W,H});//缩缓冲区到没有滚动条
+}
 void hide_cursor()//---------------------------------隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -74,9 +98,10 @@ map<string,pair<int,int> > BESTS;//-----------每关历史最佳步数(名字)
 vector<string> LEVELS;//----------------------关卡目录(名字)
 string CHOSEN;//------------------------------选的关卡(名字)
 vector<string> MAP;//-------------------------地图
-int px,py;//---------------玩家位置
+int px,py,OX,OY;//---------玩家位置，地图起始位置
 int TARGET,ON;//-----------目标/在目标上的箱子
 int STEP,MS;//-------------步/时
+int W,H,MW;//--------------控制台大小，地图大小
 
 string base_name(string s)//-------------------------去掉路径,只留文件名
 {
@@ -149,6 +174,7 @@ bool load_level()//----------------------------------读关卡文件
         if(!line.empty() && line[line.size()-1]=='\r') line.erase(line.size()-1);//去\r
         if( line.empty()) break;//空行
         MAP.push_back(line);
+        MW= MW<line.size()?line.size():MW;
     }
 
     /* ---------- 字符对应表：'原字符=显示字符' 空格隔开,只读一行 ---------- */
@@ -194,47 +220,50 @@ bool load_level()//----------------------------------读关卡文件
 void start_screem()//--------------------------------开始界面
 {
     system("cls");
-    set_color(0,10);printf("=================================================\n");
+    set_color(0,10);printf("\n ================================================\n");
                     printf("                     推 箱 子\n");
-                    printf("=================================================\n");
-    set_color(0,12);printf("[操作引导]\n");
-    set_color(0, 7);printf("  ↑↓←→  w/s/a/d ：移动\n");
-                    printf("  ESC / Q       ：退出游戏\n");
-                    printf("  把箱子全部推到目标点上就过关\n");
-    set_color(0,12);printf("[温馨提醒]\n");
-    set_color(0, 7);printf("  你的控制台尽量大点，不然……\n");
-    set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0, 7);printf("  按任意键继续……\n\n");
+                    printf(" ================================================\n");
+    set_color(0,12);printf(" [操作引导]\n");
+    set_color(0, 7);printf("   ↑↓←→  w/s/a/d ：移动\n");
+                    printf("   ESC / Q       ：退出游戏\n");
+                    printf("   把箱子全部推到目标点上就过关\n");
+    set_color(0,11);printf(" ------------------------------------------------\n");
+    set_color(0, 7);printf("   按任意键继续……\n\n");
     fflush(stdout);
     _getch();
 }
 string choose_level()//------------------------------选关界面
 {
+    set_console_size(0,LEVELS.size()+6);
     set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
     system("cls");
-    set_color(0,10);printf("================================================\n");
-                    printf("                    选 关 卡\n");
-                    printf("================================================\n");
+    set_color(0,10);printf("\n ================================================\n");
+                    printf("                     选 关 卡\n");
+                    printf(" ================================================\n");
     if(LEVELS.empty())
     {
-        set_color(0,12);printf("  我关卡文件呢?\n");
-        set_color(0, 7);printf("  %s里怎么啥也没有?\n",CHOSEN.c_str());
+        set_color(0,12);printf("   我关卡文件呢?\n");
+        set_color(0, 7);printf("   %s里怎么啥也没有?\n",CHOSEN.c_str());
         system("pause");
         return "";
     }
     for(size_t i=0;i<LEVELS.size();i++)
     {
-        set_color(0, 6);printf(" %2d. ",(int)(i+1));
+        set_color(0, 6);printf("  %2d. ",(int)(i+1));
         set_color(0, 7);printf("%-9s",LEVELS[i].c_str());
         map<string,pair<int,int> >::iterator it=BESTS.find(LEVELS[i]);
         if(it!=BESTS.end()){
-            set_color(0,10);printf("  最佳: %3d 步  用时 %8.3lf 秒",it->second.first,it->second.second/1000.0);}
+            set_color(0, 3);printf("  最佳: ");
+            set_color(0,11);printf("%3d",it->second.first);
+            set_color(0, 3);printf(" 步  用时 ");
+            set_color(0,11);printf("%8.3lf",it->second.second/1000.0);
+            set_color(0, 3);printf(" 秒");}
         else{
             set_color(0, 8);printf("                    还没人征服过");}
         putchar('\n');
     }
-    set_color(0,11);printf("-------------------------------------------------\n");
-    set_color(0, 7);printf("  输入编号选关，乱输我直接给你退了: ");
+    set_color(0,11);printf(" ------------------------------------------------\n");
+    set_color(0, 7);printf("   输入编号选关，乱输我直接给你退了: ");
     fflush(stdout);
     string s;
     getline(cin,s);
@@ -250,45 +279,45 @@ void end_screen()//----------------------------------通关画面
     double s=(MS-m*60000)/1000.0;
     bool   NEW=save_score();
 
-    set_color(0,10);printf("\n================================================\n");
-    set_color(0,14);printf("            * * *  ");
+    set_color(0,10);printf(" ================================================\n");
+    set_color(0,14);printf("             * * *  ");
     set_color(0,12);printf("你 过 关 !");
     set_color(0,14);printf("  * * *\n");
-    set_color(0,10);printf("================================================\n\n");
-    set_color(0,14);printf("          *    *    *    *    *    *\n");
-                    printf("        *      Y O U   W I N ! !     *\n");
-                    printf("          *    *    *    *    *    *\n\n");
-    set_color(0, 7);printf("  通关总耗时: ");
+    set_color(0,10);printf(" ================================================\n\n");
+    set_color(0,14);printf("           *    *    *    *    *    *\n");
+                    printf("         *      Y O U   W I N ! !     *\n");
+                    printf("           *    *    *    *    *    *\n\n");
+    set_color(0, 7);printf("   通关总耗时: ");
     if(m>0){
         set_color(0,11);printf("%2d 分 %.3lf 秒\n",m,s);}
     else{
         set_color(0,11);printf("%.3lf 秒\n",s);}
 
-        set_color(0, 7);printf("  消耗步数: ");
+        set_color(0, 7);printf("   消耗步数: ");
         set_color(0,11);printf("%3d 步\n",STEP);
-        set_color(0, 7);printf("  历史最佳: ");
+        set_color(0, 7);printf("   历史最佳: ");
     if(NEW){
         set_color(0,10);printf("%3d 步 %8.3lf 秒  新纪录！裱起来！\n",STEP,MS/1000.0);}
     else{
         set_color(0,11);printf("%3d 步 %8.3lf 秒\n",BESTS[CHOSEN].first,BESTS[CHOSEN].second/1000.0);}
-    set_color(0, 7);printf("  按 ENTER 键继续……");
+    set_color(0, 7);printf("   按 ENTER 键继续……");
     fflush(stdout);
     for(;;)
     {
         set_color(0,Rand_color());
-        gotoxy(15,6);//"Y O U   W I N ! !"的位置
+        gotoxy(16,5);//"Y O U   W I N ! !"的位置
         printf("Y O U   W I N ! !");
         Sleep(150);
         if(_kbhit()) if(_getch()=='\r') break;
     }
-    gotoxy(0,14);//光标返回
+    gotoxy(0,11);//光标返回
 }
 
 /* ==================== 绘制地图 ==================== */
 
 void draw_cell(int x,int y)//------------------------画一格
 {
-    gotoxy(x,y);
+    gotoxy(x+OX,y+OY);
     switch(MAP[y][x])
     {
         case '$':set_color(0, 6);fputs(DISP['$'].c_str(),stdout);break;//没归位:暗黄
@@ -347,7 +376,7 @@ void run_game()//------------------------------------进行游戏
         {
             set_color(0,7);
             system("cls");
-            printf("  箱子都笑话你。\n");
+            printf("   箱子都笑话你。\n");
             return;
         }
 
@@ -408,7 +437,7 @@ void run_game()//------------------------------------进行游戏
 inline void init()
 {
     px=py=-1;
-    STEP=ON=TARGET=0;
+    STEP=ON=TARGET=MW=0;
     for(int i=0;i<256;i++) DISP[i]=string(1,i);//映射
     //墙#▓  边界7▒  箱子$□  *■  目标.○  玩家@☻  +☺//
      BESTS.clear();
@@ -426,6 +455,8 @@ int main()
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
     set_console_font();
+    lock_window();
+    set_console_size(0,0);
     hide_cursor();
 
     start_screem();
@@ -444,18 +475,22 @@ int main()
             continue;
         }
 
+        set_console_size(MW+2,MAP.size()+4);//留点空
+        get_console_size(W,H);
+        OX=(W-MW)/2; OY=(H-MAP.size())/2-1;
         draw_map();
 
         /* ---------- 底部简略引导 ---------- */
-        gotoxy(0,MAP.size()+1);
+
+        gotoxy((W-49)/2,H-2);
         set_color(0,7);
-        printf("  ↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | 把箱子全部推到目标点上");
+        printf("↑↓←→ w/s/a/d 移动 | ESC/Q 退出 | 让箱子填满目标点");
 
         run_game();
 
         /* ---------- 游戏结束提示 ---------- */
-        set_color(0,11);printf("-------------------------------------------------\n");
-        set_color(0, 7);printf("  按 ESC 或 Q 退出游戏，按任意键返回选关\n");
+        set_color(0,11);printf(" -------------------------------------------------\n");
+        set_color(0, 7);printf("   按 ESC 或 Q 退出游戏，按任意键返回选关\n");
         fflush(stdout);
         key=_getch();
         if(key==27 || key=='q' || key=='Q') break;

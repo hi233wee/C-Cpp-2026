@@ -12,6 +12,28 @@ struct letter
     int x,y,o;//o为状态
 }Head,End;
 HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
+void lock_window()//不让动窗口大小
+{
+    HWND a=GetConsoleWindow();
+    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)&~(LONG_PTR)(WS_THICKFRAME|WS_MAXIMIZEBOX));
+    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+}
+void set_console_size(SHORT W,SHORT H)//-------------设窗口和缓冲区大小
+{
+    if(W<1) W=1;
+    if(H<1) H=1;
+    COORD mx=GetLargestConsoleWindowSize(handle_output);
+    if(W>mx.X) W=mx.X;
+    if(H>mx.Y) H=mx.Y;
+    CONSOLE_SCREEN_BUFFER_INFO a;
+    GetConsoleScreenBufferInfo(handle_output,&a);
+    COORD b={a.dwSize.X<W?W:a.dwSize.X,
+             a.dwSize.Y<H?H:a.dwSize.Y};
+    SetConsoleScreenBufferSize(handle_output,b);//放大缓冲区
+    SMALL_RECT c={0,0,SHORT(W-1),SHORT(H-1)};
+    SetConsoleWindowInfo(handle_output,TRUE,&c);//设窗口大小
+    SetConsoleScreenBufferSize(handle_output,{W,H});//缩缓冲区到没有滚动条
+}
 void hide_cursor()//隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -106,7 +128,9 @@ int main()
     hide_cursor();
     printf("Please change the concole as you like.\n");
     printf("Please press any key to continue."); _getch();gotoxy(0,0);
+    lock_window();
     get_console_size(W,H);//获取控制台窗口宽高
+    set_console_size(W,H);
     W--;H--;
     H=0;//题目让我这么干的
     if(W==0)
@@ -119,7 +143,6 @@ int main()
     printf("If you do not input,it will be '7'.\n\n");
     c=inputc();
     if(c<32 || c>126) c='7';
-    printf("Don't change anything about the console window.\n");
     printf("When it is running,you can press the 'ESC' key to exit the program.\n");
     printf("Please press any key to start the game."); _getch();
     system("cls");
