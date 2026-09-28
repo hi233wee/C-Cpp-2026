@@ -19,10 +19,7 @@ using namespace std;
     DWORD on=GetTickCount();
     for(;;)
     {
-        if(GetTickCount()>ms+on)
-        {
-            break;
-        }
+        if(GetTickCount()>ms+on) break;
         if(_kbhit()) _getch();
     }
 }*/
@@ -45,6 +42,13 @@ inline int Rand_color()
 /* ==================== 控制台工具 ==================== */
 
 HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
+void set_console_font()//----------------------------改字体
+{
+    CONSOLE_FONT_INFOEX a={sizeof(a)};
+    a.dwFontSize.Y=16;
+    wcscpy_s(a.FaceName,L"Lucida Console");
+    SetCurrentConsoleFontEx(handle_output,FALSE,&a);
+}
 void hide_cursor()//---------------------------------隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -133,7 +137,7 @@ char pick_symbol()//---------------------------------选角
     for(;;)
     {
         set_color(0,7);
-        printf("请输入一个常见字符作为玩家符号。(回车默认 7): ");
+        printf("请输入一个常见字符作为玩家符号。(回车默认 '7'): ");
         fflush(stdout);
         string s;
         getline(cin,s);
@@ -312,6 +316,7 @@ int main()
     /* ---------- 初始设置 ---------- */
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
+    set_console_font();
     hide_cursor();
 
     for(;;)

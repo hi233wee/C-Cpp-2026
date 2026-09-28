@@ -29,6 +29,13 @@ inline int Rand_color()
 /* ==================== 控制台工具 ==================== */
 
 HANDLE handle_output=GetStdHandle(STD_OUTPUT_HANDLE);
+void set_console_font()//----------------------------改字体
+{
+    CONSOLE_FONT_INFOEX a={sizeof(a)};
+    a.dwFontSize.Y=16;
+    wcscpy_s(a.FaceName,L"Lucida Console");
+    SetCurrentConsoleFontEx(handle_output,FALSE,&a);
+}
 void hide_cursor()//---------------------------------隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -122,13 +129,12 @@ bool save_score()//--破纪录才更新,返回是否新纪录
     BESTS[CHOSEN].first  =STEP;
     BESTS[CHOSEN].second =MS  ;
     ofstream out(SCORE+".tmp");//临时文件,防止写到一半停了
-    for(it=BESTS.begin();it!=BESTS.end();it++)
+    for(it=BESTS.begin();it!=BESTS.end();++it)
         out <<it->first        <<" "
             <<it->second.first <<" "
             <<it->second.second<<"\n";
-    rename((SCORE+".tmp").c_str(),SCORE.c_str());//合并
-    out.close();//防止阻碍删除
-    remove((SCORE+".tmp").c_str());
+    out.close();//防止阻碍合并
+    filesystem::rename(SCORE+".tmp",SCORE);//合并
     return 1;
 }
 bool load_level()//----------------------------------读关卡文件
@@ -218,7 +224,7 @@ string choose_level()//------------------------------选关界面
     }
     for(size_t i=0;i<LEVELS.size();i++)
     {
-        set_color(0,14);printf(" %2d. ",(int)(i+1));
+        set_color(0, 6);printf(" %2d. ",(int)(i+1));
         set_color(0, 7);printf("%-9s",LEVELS[i].c_str());
         map<string,pair<int,int> >::iterator it=BESTS.find(LEVELS[i]);
         if(it!=BESTS.end()){
@@ -285,11 +291,11 @@ void draw_cell(int x,int y)//------------------------画一格
     gotoxy(x,y);
     switch(MAP[y][x])
     {
-        case '$':set_color(0,14);fputs(DISP['$'].c_str(),stdout);break;//没归位:黄
+        case '$':set_color(0, 6);fputs(DISP['$'].c_str(),stdout);break;//没归位:暗黄
         case '@':set_color(0,11);fputs(DISP['@'].c_str(),stdout);break;
         case '.':set_color(0,12);fputs(DISP['.'].c_str(),stdout);break;
         case '*':set_color(0,10);fputs(DISP['*'].c_str(),stdout);break;//归位:绿
-        case '+':set_color(0,12);fputs(DISP['+'].c_str(),stdout);break;//玩家在目标:红
+        case '+':set_color(0, 3);fputs(DISP['+'].c_str(),stdout);break;//玩家在目标:暗青
         case '#':set_color(0,15);fputs(DISP['#'].c_str(),stdout);break;
         case '7':set_color(0, 8);fputs(DISP['7'].c_str(),stdout);break;//边界
         case ' ':set_color(0, 0);putchar(' ');                   break;
@@ -409,7 +415,7 @@ inline void init()
     LEVELS.clear();
        MAP.clear();
     load_scores();
-     find_level();
+    find_level();
 }
 
 /* ==================== 主函数 ==================== */
@@ -419,6 +425,7 @@ int main()
     /* ---------- 初始设置 ---------- */
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
+    set_console_font();
     hide_cursor();
 
     start_screem();
@@ -462,4 +469,6 @@ int main()
 3.do{}while();
 4.set存变量
 5.比较size()最好用size_t
+6.for里用++i更好
+7.filesystem文件操作
 */
