@@ -11,6 +11,7 @@
 using namespace std;
 typedef unsigned long long uLL;
 typedef long long LL;
+typedef unsigned int uint;
 typedef unsigned short int usint;
 #define Rand() RAND(RNG)
 uLL rd()
@@ -83,29 +84,36 @@ void reverse(linked_list*&h)//反向
     h->N=p;
 }
 char s[777777777],tmp[20];
-LL x;usint t,tt;
+LL x;uint t,tt;
 void putn(const linked_list* i)//输出
 {
     t=tt=0;
     while(i)
     {
         x=i->V;
+        if(x<0)
+        {
+            tmp[tt++]='-';
+            x=-x;
+        }
+        if(x==0)
+            tmp[tt++]='0';
         while(x)
         {
             tmp[tt++]=x%10+'0';
             x/=10;
         }
         while(tt)
-            s[++t]=tmp[--tt];
-        s[++t]='\n';
+            s[t++]=tmp[--tt];
+        s[t++]='\n';
         if(t>777777700)
         {
-            fwrite(s,1,t+1,stdout);//分块
+            fwrite(s,1,t,stdout);//分块
             t=0;
         }
         i=i->N;
     }
-    fwrite(s,1,t+1,stdout);
+    fwrite(s,1,t,stdout);
 }
 void find_5(linked_list* &i,size_t &id)
 {
@@ -142,10 +150,12 @@ int main()
     head->N=nullptr;
     head->V=Rand();
     //我的链表头存值
+    if(n==0) goto END;
     for(size_t i=n;--i;) add(head,Rand());//去掉第一个
     putn(head);
     reverse(head);
     
+    END:
     printf("  Then try to find the first 5.\n");
     printf("  And return the id of it.\n");
     it=head;

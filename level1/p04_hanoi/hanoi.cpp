@@ -26,6 +26,7 @@ int main()
     system("cls");
     printf("Please input the number of disks.");
     n=rd();
+    if(n<1) return 0;
     move(n,'A','C','B');
     return 0;
 }//O(2^n)这一块

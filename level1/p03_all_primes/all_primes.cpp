@@ -33,12 +33,12 @@ int main()
                 x/=10;
             }
             while(tt)
-                s[++t]=tmp[--tt];
-            s[++t]='\n';
+                s[t++]=tmp[--tt];
+            s[t++]='\n';
         }
         for(j=i;j<1000;j+=i) *(o+j)=1;
     }
-    fwrite(s,1,t+1,stdout);
+    fwrite(s,1,t,stdout);
     QueryPerformanceCounter(&end);
     printf("used time:%.4lfms\n",(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000);
     return 0;
@@ -58,7 +58,7 @@ typedef unsigned int uint;
 typedef unsigned short int usint;
 bool* o;
 char s[10000000*8],tmp[7];
-uint i,j,x;usint t=0,tt;
+uint i,j,x;uint t=0,tt;
 int main()
 {
     system("cls");
@@ -82,12 +82,12 @@ int main()
                 x/=10;
             }
             while(tt)
-                s[++t]=tmp[--tt];
-            s[++t]='\n';
+                s[t++]=tmp[--tt];
+            s[t++]='\n';
         }
         for(j=i;j<10000000;j+=i) *(o+j)=1;
     }
-    fwrite(s,1,t+1,stdout);
+    fwrite(s,1,t,stdout);
     QueryPerformanceCounter(&end);
     printf("used time:%.4lfms\n",(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000);
     return 0;
