@@ -51,11 +51,11 @@ int inputn()
     int n=atoi(s.c_str());//转换成数字
     return n;
 }
-/*void gotoxy(short x,short y)//移动光标
+void gotoxy(short x,short y)//移动光标
 {
     COORD a={x,y};
     SetConsoleCursorPosition(handle_output,a);
-}*/
+}
 bool o[777][77];
 char get(short x,short y)//读取
 {
@@ -102,8 +102,10 @@ void letter_went()
 }
 int main()
 {
-    system("cls");
+    system("cls");W=1;
     hide_cursor();
+    printf("Please change the concole as you like.\n");
+    printf("Please press any key to continue."); _getch();gotoxy(0,0);
     get_console_size(W,H);//获取控制台窗口宽高
     W--;H--;
     H=0;//题目让我这么干的
