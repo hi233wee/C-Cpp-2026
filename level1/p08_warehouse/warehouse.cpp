@@ -40,6 +40,30 @@ void set_console_font()//----------------------------改字体
     wcscpy_s(a.FaceName,L"Lucida Console");
     SetCurrentConsoleFontEx(handle_output,FALSE,&a);
 }
+void lock_window()//---------------------------------不让动窗口大小
+{
+    HWND a=GetConsoleWindow();
+    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)&~(LONG_PTR)(WS_THICKFRAME|WS_MAXIMIZEBOX));
+    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+}
+const int min_W=49;//最小宽度(给人留点发挥空间)
+const int min_H=25;//最小高度(check界面23)
+void set_console_size(SHORT W,SHORT H)//-------------设窗口和缓冲区大小
+{
+    if(W<min_W) W=min_W;
+    if(H<min_H) H=min_H;
+    COORD mx=GetLargestConsoleWindowSize(handle_output);
+    if(W>mx.X) W=mx.X;
+    if(H>mx.Y) H=mx.Y;
+    CONSOLE_SCREEN_BUFFER_INFO a;
+    GetConsoleScreenBufferInfo(handle_output,&a);
+    COORD b={a.dwSize.X<W?W:a.dwSize.X,
+             a.dwSize.Y<H?H:a.dwSize.Y};
+    SetConsoleScreenBufferSize(handle_output,b);//放大缓冲区
+    SMALL_RECT c={0,0,SHORT(W-1),SHORT(H-1)};
+    SetConsoleWindowInfo(handle_output,TRUE,&c);//设窗口大小
+    SetConsoleScreenBufferSize(handle_output,{W,H});//缩缓冲区到没有滚动条
+}
 void hide_cursor()//---------------------------------隐藏光标
 {
     CONSOLE_CURSOR_INFO a;
@@ -59,19 +83,19 @@ void gotoxy(short x,short y)//-----------------------移动光标
     COORD a={x,y};
     SetConsoleCursorPosition(handle_output,a);
 }
-int get_cursor_column()
+int get_cursor_column()//----------------------------获取控制台列
 {
     CONSOLE_SCREEN_BUFFER_INFO a;
     GetConsoleScreenBufferInfo(handle_output,&a);
     return a.dwCursorPosition.X;
 }
-int get_cursor_row()
+int get_cursor_row()//-------------------------------获取控制台行
 {
     CONSOLE_SCREEN_BUFFER_INFO a;
     GetConsoleScreenBufferInfo(handle_output,&a);
     return a.dwCursorPosition.Y;
 }
-void erase_row(int y)//擦除指定行
+void erase_row(int y)//------------------------------擦除指定行
 {
     CONSOLE_SCREEN_BUFFER_INFO d;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE),&d);
@@ -174,7 +198,7 @@ void search_screem(string&name)//--------------------搜索(不区分大小写)
 {
     int key;BACK:
     set_color(0, 7);system("cls");
-                    printf("┌──────────────┬──────────────┐\n│  ");
+                    printf("\n┌──────────────┬──────────────┐\n│  ");
     set_color(0,10);printf("enter 确认");
     set_color(0, 7);printf("  │ ");
     set_color(0,10);printf("输入空白返回");//懒得写清除搜索了
@@ -182,17 +206,18 @@ void search_screem(string&name)//--------------------搜索(不区分大小写)
                     printf("       ┌────────────────┐\n");
                     printf("       │                │\n");
                     printf("       └────────────────┘\n\n");
-    gotoxy(9,4); set_color(0,11);printf("你的名字是啥呢");
+    gotoxy(9,5); set_color(0,11);printf("你的名字是啥呢");
     show_cursor();
-    gotoxy(0,6); getline(cin,name);
+    gotoxy(0,7); getline(cin,name);
     hide_cursor();
     search(name);
 }//写到这我突然发现，我可以把整个表打出来再打字
 void check_screem()//--------------------------------查看
 {
+    string name="";//搜索名
     BACKBACK:
     set_color(0, 7);system("cls");
-                    printf("╔══════════════════════════════════╗\n");
+                    printf("\n╔══════════════════════════════════╗\n");
                     printf("║           ");
     set_color(0,10);printf("┌──────────┐");
     set_color(0, 7);printf("           ║\n║           ");
@@ -212,35 +237,35 @@ void check_screem()//--------------------------------查看
     set_color(0, 7);printf(" ║\n╚══════════╧════════════╧══════════╝");
 
     int key;size_t page=1,id,i;//无符号有个大坑
-    string name="";//搜索名
     BACK:
+    if(!name.empty()){
+        gotoxy(3,19);
+        set_color(0,8);fputs(("搜索 "+name).c_str(),stdout);
+    }
     if(page==0) page=(tmp.size()+6)/7;//越下界
     if(tmp.size()<page*7-6) page=1;   //越上界
     id=min(page*7,tmp.size());//上界+1
-    gotoxy(16,19); set_color(0, 6);printf("%4d",page);
+    gotoxy(16,20); set_color(0, 6);printf("%4d",page);
     if(page*7>=id)//满
         for(i=page*7-7;i<id;++i)
         {
-            erase_row(i%7*2+4);//万一你输了很长的呢
-            gotoxy(0,i%7*2+4);
+            erase_row(i%7*2+5);//万一你输了很长的呢
+            gotoxy(0,i%7*2+5);
             set_color(0, 7);printf("║                                  ║");
-            gotoxy(3,i%7*2+4);
-            set_color(0,14);fputs(tmp[i].name.c_str(),stdout);
             gotoxy(3,i%7*2+5);
+            set_color(0,14);fputs(tmp[i].name.c_str(),stdout);
+            gotoxy(3,i%7*2+6);
             set_color(0, 1);printf("数量 ");
             set_color(0, 3);printf("%-27lld",tmp[i].n);
         }
     if(id<page*7)//没满
         for(i=id;i<page*7;++i)
         {
-            erase_row(i%7*2+4);erase_row(i%7*2+5);//万一你输了很长的呢
-            gotoxy(0,i%7*2+4);
+            erase_row(i%7*2+5);erase_row(i%7*2+6);//万一你输了很长的呢
+            gotoxy(0,i%7*2+5);
             set_color(0, 7);printf("║                                  ║\n");
                             printf("║                                  ║\n");
         }
-    if(!name.empty()){
-        gotoxy(3,18);fputs(("搜索 "+name).c_str(),stdout);
-    }
     for(;;)
     {
         key=_getch();
@@ -264,7 +289,7 @@ bool input_screem(string&name,LL&n)
 {
     int key;BACK:
     set_color(0, 7);system("cls");
-                    printf("┌──────────────┬──────────────┐\n│  ");
+                    printf("\n┌──────────────┬──────────────┐\n│  ");
     set_color(0,10);printf("enter 确认");
     set_color(0, 7);printf("  │ ");
     set_color(0,10);printf("输入空白返回");//你知道写输入中返回有多难吗
@@ -274,8 +299,8 @@ bool input_screem(string&name,LL&n)
     set_color(0, 7);printf("└──────┘\n\n");
 
     show_cursor();
-    gotoxy(2,4); set_color(0,11);printf("数量");
-    gotoxy(0,6); getline(cin,name);//不想再开一个
+    gotoxy(2,5); set_color(0,11);printf("数量");
+    gotoxy(0,7); getline(cin,name);//不想再开一个
     if(name.empty()){
         hide_cursor();
         return 0;}
@@ -284,9 +309,9 @@ bool input_screem(string&name,LL&n)
         set_color(0,12);printf("不是，你输的啥？重来！");
         goto BACK;
     }
-    erase_row(6);
-    gotoxy(2,4); set_color(0,11);printf("名字");
-    gotoxy(0,6); getline(cin,name);
+    erase_row(7);
+    gotoxy(2,5); set_color(0,11);printf("名字");
+    gotoxy(0,7); getline(cin,name);
     if(name.empty()){
         hide_cursor();
         goto BACK;}
@@ -297,7 +322,7 @@ bool confirm_screem(const string&name,const LL&n)
 {
     FlushConsoleInputBuffer(handle_output);//清空输入缓冲'\n'
     set_color(0, 7);system("cls");
-                    printf("╔═════════════════════════╗\n║ ");
+                    printf("\n╔═════════════════════════╗\n║ ");
     set_color(0,11);printf("你的名字：");
     set_color(0, 7);printf("              ║\n");
                     printf("║                         ║\n");//太长就冲出去了
@@ -313,9 +338,9 @@ bool confirm_screem(const string&name,const LL&n)
     set_color(0, 7);printf("  ║\n╚════════════╧════════════╝\n");
 
     vector<things>::iterator it=find_if(stock.begin(),stock.end(),[&name](const things&a){return a.name==name;});
-    gotoxy(4,2); set_color(0,14);fputs(name.c_str(),stdout);
-    gotoxy(4,4); set_color(0, 3);printf("%lld",n);
-    gotoxy(4,6); set_color(0, 3);printf("%lld",it==stock.end()?0:it->n);
+    gotoxy(4,3); set_color(0,14);fputs(name.c_str(),stdout);
+    gotoxy(4,5); set_color(0, 3);printf("%lld",n);
+    gotoxy(4,7); set_color(0, 3);printf("%lld",it==stock.end()?0:it->n);
 
     int key;
     for(;;)
@@ -329,7 +354,7 @@ bool confirm_screem(const string&name,const LL&n)
 void in_screem()
 {
     set_color(0, 7);system("cls");
-    set_color(0,10);printf("=====================================\n");
+    set_color(0,10);printf("\n=====================================\n");
                     printf("                 入 库               \n");
                     printf("=====================================\n");
     set_color(0, 7);then();
@@ -340,7 +365,7 @@ void in_screem()
     }
     update(name,n);
     set_color(0, 7);system("cls");
-    set_color(0,10);printf("=====================================\n");
+    set_color(0,10);printf("\n=====================================\n");
                     printf("              入 库 成 功            \n");
                     printf("=====================================\n");
     set_color(0, 7);then();
@@ -348,7 +373,7 @@ void in_screem()
 void out_screem()
 {
     set_color(0, 7);system("cls");
-    set_color(0,10);printf("=====================================\n");
+    set_color(0,10);printf("\n=====================================\n");
                     printf("                 出 库               \n");
                     printf("=====================================\n");
     set_color(0,12);printf("若你出库的数量大于库存，将自动全部出库\n");
@@ -360,7 +385,7 @@ void out_screem()
     }
     update(name,-n);
     set_color(0, 7);system("cls");
-    set_color(0,10);printf("=====================================\n");
+    set_color(0,10);printf("\n=====================================\n");
                     printf("              出 库 成 功            \n");
                     printf("=====================================\n");
     set_color(0, 7);then();
@@ -368,7 +393,7 @@ void out_screem()
 void reset_screem()
 {
     set_color(0, 7);system("cls");
-                    printf("  你按了");
+                    printf("\n  你按了");
     set_color(0,12);printf("4");
     set_color(0, 7);printf("，对吧？\n");
                     printf("  接下来会进行一个很危险的操作，\n");
@@ -390,8 +415,8 @@ void reset_screem()
         if(key==13) break; //enter
         if(key==27) return;//esc
     }
-    erase_row(6);
-    gotoxy(0,6);
+    erase_row(7);
+    gotoxy(0,7);
     if(CopyFileA((STOCK+".copy").c_str(),STOCK.c_str(),FALSE)){
         set_color(0,11);printf("  OK啊，也是完成了。\n");}
     else{
@@ -406,7 +431,7 @@ void main_screem()
         BACK://标签，又让我学到了
         tmp=stock;//为check准备
         set_color(0, 7);system("cls");
-                        printf("╔════════════════════════╗\n║     ");
+                        printf("\n╔════════════════════════╗\n║     ");
         set_color(0,10);printf("┌────────────┐");
         set_color(0, 7);printf("     ║\n║     ");
         set_color(0,10);printf("│ 进销存菜单 │");
@@ -453,13 +478,15 @@ int main()
     SetConsoleOutputCP(65001);//UTF-8，保证中文不乱码
     SetConsoleCP(65001);
     set_console_font();
+    lock_window();
+    set_console_size(0,0);
     hide_cursor();
     system("cls");
 
     if(!load())
     {
         set_color(0,11);
-        printf("\t我很不幸地告诉你,\n");                then();
+        printf("\n\t我很不幸地告诉你,\n");                then();
         printf("\t仓库打开失败了。\n");                 then();
         printf("\t不知道是什么杀毒软件把钥匙夺走了，\n");then();
         printf("\t还是你没给我钥匙。\n");               then();
@@ -473,7 +500,7 @@ int main()
     if(!save())
     {
         set_color(0,11);
-        printf("\t要是你看见这句话了，说明你很幸运，\n");   then();
+        printf("\n\t要是你看见这句话了，说明你很幸运，\n");   then();
         printf("\t因为你保存失败了。\n");                  then();
         printf("\t你之前的操作全白费了。\n");              then();
         printf("\t这就像你的文档没有保存，突然就停电了。\n");then();
