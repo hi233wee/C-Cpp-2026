@@ -17,7 +17,8 @@ typedef unsigned short int usint;
 uLL rd()
 {
     char c=getchar();uLL x=0;
-    while(!isdigit(c)) c=getchar();
+    while(c!=EOF && !isdigit(c)) c=getchar();
+    if(c==EOF) return 0;//ai说有神秘原因会输入这个
     while(isdigit(c))
     {x=x*10+c-'0';c=getchar();}
     return x;
