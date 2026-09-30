@@ -226,7 +226,7 @@ void check_screem()//--------------------------------查看
     set_color(0, 7);printf("           ║\n║           ");
     set_color(0,10);printf("└──────────┘");
     set_color(0, 7);printf("           ║\n");
-    for(int i=15;i;--i)
+    for(int i=15;i;--i)//15行
                     printf("║                                  ║\n");
                     printf("║ ←↑上一页   第      页   下一页↓→ ║\n");
                     printf("╟──────────┬────────────┬──────────╢\n║ ");
@@ -286,7 +286,7 @@ void check_screem()//--------------------------------查看
         }
     }
 }//ai建议我把每页显示条目数放在一个常量里，方便改，可我就要7
-bool input_screem(string&name,LL&n)
+bool input_screem(string&name,LL&n)//----------------进出库输入
 {
     BACK:
     set_color(0, 7);system("cls");
@@ -295,9 +295,7 @@ bool input_screem(string&name,LL&n)
     set_color(0, 7);printf("  │ ");
     set_color(0,10);printf("输入空白返回");//你知道写输入中返回有多难吗
     set_color(0, 7);printf(" │\n└──────────────┴──────────────┘\n");
-                    printf("┌──────┐\n│      │ ");
-    set_color(0,14);printf("注：别输太长，后果自负；区分大小写\n");
-    set_color(0, 7);printf("└──────┘\n\n");
+                    printf("┌──────┐\n│      │\n└──────┘\n\n");
 
     show_cursor();
     gotoxy(2,5); set_color(0,11);printf("数量");
@@ -310,6 +308,7 @@ bool input_screem(string&name,LL&n)
         set_color(0,12);printf("不是，你输的啥？重来！");
         goto BACK;
     }
+    set_color(0,14);printf("注：别输太长，后果自负；区分大小写；我会把你的空改为‘_’\n");
     erase_row(7);
     gotoxy(2,5); set_color(0,11);printf("名字");
     gotoxy(0,7); getline(cin,name);
@@ -317,9 +316,11 @@ bool input_screem(string&name,LL&n)
         hide_cursor();
         goto BACK;}
     hide_cursor();
+    for(size_t i=name.size();i--;)//改成‘_’
+        if(isspace(name[i])) name[i]='_';//所有cin会停的
     return 1;
 }
-bool confirm_screem(const string&name,const LL&n)
+bool confirm_screem(const string&name,const LL&n)//--确认进出库
 {
     FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));//清空输入缓冲'\n'
     set_color(0, 7);system("cls");
@@ -352,7 +353,7 @@ bool confirm_screem(const string&name,const LL&n)
     }
     return 1;
 }
-void in_screem()
+void in_screem()//-----------------------------------入库
 {
     set_color(0, 7);system("cls");
     set_color(0,10);printf("\n=====================================\n");
@@ -371,7 +372,7 @@ void in_screem()
                     printf("=====================================\n");
     set_color(0, 7);then();
 }//其实这两个可以合起来写
-void out_screem()
+void out_screem()//----------------------------------出库
 {
     set_color(0, 7);system("cls");
     set_color(0,10);printf("\n=====================================\n");
@@ -397,7 +398,7 @@ void out_screem()
                     printf("=====================================\n");
     set_color(0, 7);then();
 }
-void reset_screem()
+void reset_screem()//--------------------------------重置
 {
     set_color(0, 7);system("cls");
                     printf("\n  你按了");
@@ -431,7 +432,7 @@ void reset_screem()
     load();
     then();
 }
-void main_screem()
+void main_screem()//---------------------------------主界面
 {
     for(;;)
     {
@@ -454,7 +455,7 @@ void main_screem()
         set_color(0,14);printf("3. ");
         set_color(0,11);printf("出库");
         set_color(0, 7);printf("         ║\n║        ");
-        set_color(0, 0);printf("4. 重置");
+        set_color(0, 0);printf("4. 重置");//看不见我!
         set_color(0, 7);printf("         ║\n╟──────────┬──┬──────────╢\n║ ");
         set_color(0,10);printf("123 选择");
         set_color(0, 7);printf(" │77│ ");
@@ -493,7 +494,7 @@ int main()
     if(!load())
     {
         set_color(0,11);
-        printf("\n\t我很不幸地告诉你,\n");                then();
+        printf("\n\t我很不幸地告诉你,\n");              then();
         printf("\t仓库打开失败了。\n");                 then();
         printf("\t不知道是什么杀毒软件把钥匙夺走了，\n");then();
         printf("\t还是你没给我钥匙。\n");               then();
@@ -507,9 +508,9 @@ int main()
     if(!save())
     {
         set_color(0,11);
-        printf("\n\t要是你看见这句话了，说明你很幸运，\n");   then();
-        printf("\t因为你保存失败了。\n");                  then();
-        printf("\t你之前的操作全白费了。\n");              then();
+        printf("\n\t要是你看见这句话了，说明你很幸运，\n");  then();
+        printf("\t因为你保存失败了。\n");                   then();
+        printf("\t你之前的操作全白费了。\n");               then();
         printf("\t这就像你的文档没有保存，突然就停电了。\n");then();
         printf("\t当然如果你不是台式机就没有事。\n");       then();
         printf("\t至于为什么不是每次操作完就保存，\n");     then();

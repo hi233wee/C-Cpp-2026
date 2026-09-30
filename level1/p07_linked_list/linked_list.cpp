@@ -62,7 +62,7 @@ struct linked_list
 };
 uLL n;
 LL L,R;
-void add(linked_list*& h,LL v)//添加
+void add(linked_list*& h,LL v)//添加(头插)
 {
     linked_list* p=(linked_list*)malloc(sizeof(linked_list));
     p->N=h;
@@ -84,7 +84,19 @@ void reverse(linked_list*&h)//反向
     }
     h->N=p;
 }
-char s[777777777],tmp[20];
+void Free(linked_list*& h)//释放空间
+{
+    linked_list* p;
+    while(h->N)
+    {
+        p=h->N;
+        free(h);
+        h=p;
+    }
+    free(h);
+    h=nullptr;
+}
+char s[7777777],tmp[77];
 LL x;uint t,tt;
 void putn(const linked_list* i)//输出
 {
@@ -107,7 +119,7 @@ void putn(const linked_list* i)//输出
         while(tt)
             s[t++]=tmp[--tt];
         s[t++]='\n';
-        if(t>777777700)
+        if(t>7777700)
         {
             fwrite(s,1,t,stdout);//分块
             t=0;
@@ -137,6 +149,10 @@ int main()
     system("cls");
     printf("Please input the size of the linked list\n  ");
     n=rd();
+    if(n==0){
+        printf("The size is zero?");
+        return 0;
+    }
     printf("Please input the value range of elements in the linked list\n");
     printf("   left bound: ");L=rd();
     printf("  right bound: ");R=rd();
@@ -146,18 +162,14 @@ int main()
     random_device RD;
     mt19937 RNG(RD());
     uniform_int_distribution<LL> RAND(L,R);
-    linked_list* head=(linked_list*)malloc(sizeof(linked_list));
-    linked_list* it  =(linked_list*)malloc(sizeof(linked_list));//记录找到哪了
-    head->N=nullptr;
-    head->V=Rand();
+    linked_list* head=nullptr;
+    linked_list* it;//记录找到哪了
     //我的链表头存值
-    if(n==0) goto END;
-    for(size_t i=n;--i;) add(head,Rand());//去掉第一个
+    for(size_t i=n+1;--i;) add(head,Rand());
     putn(head);
     reverse(head);
     
-    END:
-    printf("  Then try to find the first 5.\n");
+    printf("Then I will try to find the first 5.\n");
     printf("  And return the id of it.\n");
     it=head;
     size_t id=1;
@@ -169,7 +181,11 @@ int main()
         for(;;)
         {
             c=_getch();
-            if(c==27) {erase_line(get_cursor_line());return 0;}
+            if(c==27){
+                erase_line(get_cursor_line());
+                Free(head);
+                return 0;
+            }
             else if(c==13) break;
         }
         erase_line(get_cursor_line());gotoxy(0,get_cursor_line());
