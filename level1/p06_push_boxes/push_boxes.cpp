@@ -94,7 +94,7 @@ const string SCORE=R"(score.push_boxes)";//---成绩文件夹
 const string DIR=R"(levels\)";//--------------关卡文件夹
 const string NAME=R"(level_*)";//-------------关卡命名方式
 const string EXTENTION=R"(.push_boxes)";//----关卡后缀
-map<string,pair<int,int> > BESTS;//-----------每关历史最佳步数(名字)
+map<string,pair<int,int> > BESTS;//-----------每关历史最佳步数和时间(名字)
 vector<string> LEVELS;//----------------------关卡目录(名字)
 string CHOSEN;//------------------------------选的关卡(名字)
 vector<string> MAP;//-------------------------地图
@@ -134,16 +134,23 @@ void find_level()
 
 /* ==================== 游戏存取 ==================== */
 
-void load_scores()//----------------------------------读历史最佳
+void load_scores()//---------------------------------读历史最佳
 {
     ifstream in(SCORE);
+    if(!in.is_open()){
+        set_color(0,12);printf("   出了点小问题, 成绩读取失败了\n");
+        set_color(0,14);printf("   但是并不影响你玩, 对吗?\n");
+        set_color(0, 7);printf("按任意键继续……\n\n");
+        _getch();
+        return;
+    }
     string name;
     int step,ms;
     while(in>>name>>step>>ms)
         BESTS[name].first  =step,
         BESTS[name].second =ms  ;
 }
-bool save_score()//--破纪录才更新,返回是否新纪录
+bool save_score()//----------------------------------保存,返回是否新纪录
 {
     map<string,pair<int,int> >::iterator it=BESTS.find(CHOSEN);
     if(it!=BESTS.end())
@@ -159,7 +166,14 @@ bool save_score()//--破纪录才更新,返回是否新纪录
             <<it->second.first <<" "
             <<it->second.second<<"\n";
     out.close();//防止阻碍合并
-    filesystem::rename(SCORE+".tmp",SCORE);//合并
+    error_code ec;
+    filesystem::rename(SCORE+".tmp",SCORE,ec);//合并
+    if(ec){//有错误信息
+        set_color(0,12);printf("   emmm, 坏了, 保存失败了\n");
+        set_color(0,14);printf("   哎呀不管了, 先祝贺你再说\n");
+        set_color(0, 7);printf("按任意键继续……\n\n");
+        _getch();
+    }
     return 1;
 }
 bool load_level()//----------------------------------读关卡文件
@@ -229,13 +243,12 @@ void start_screem()//--------------------------------开始界面
                     printf("   把箱子全部推到目标点上就过关\n");
     set_color(0,11);printf(" ------------------------------------------------\n");
     set_color(0, 7);printf("   按任意键继续……\n\n");
-    fflush(stdout);
     _getch();
 }
 string choose_level()//------------------------------选关界面
 {
     set_console_size(0,LEVELS.size()+6);
-    set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
+    set_color(0,7);
     system("cls");
     set_color(0,10);printf("\n ================================================\n");
                     printf("                     选 关 卡\n");
@@ -244,7 +257,8 @@ string choose_level()//------------------------------选关界面
     {
         set_color(0,12);printf("   我关卡文件呢?\n");
         set_color(0, 7);printf("   %s里怎么啥也没有?\n",CHOSEN.c_str());
-        system("pause");
+        set_color(0, 7);printf("按任意键继续……\n\n");
+        _getch();
         return "";
     }
     for(size_t i=0;i<LEVELS.size();i++)
@@ -264,7 +278,6 @@ string choose_level()//------------------------------选关界面
     }
     set_color(0,11);printf(" ------------------------------------------------\n");
     set_color(0, 7);printf("   输入编号选关，乱输我直接给你退了: ");
-    fflush(stdout);
     string s;
     getline(cin,s);
     int n=atoi(s.c_str());
@@ -273,11 +286,12 @@ string choose_level()//------------------------------选关界面
 }
 void end_screen()//----------------------------------通关画面
 {
-    set_color(0,7);//先恢复默认颜色再清屏，防止背景残留游戏配色
+    set_color(0,7);
     system("cls");
     int    m=MS/60000;
     double s=(MS-m*60000)/1000.0;
     bool   NEW=save_score();
+    system("cls");
 
     set_color(0,10);printf(" ================================================\n");
     set_color(0,14);printf("             * * *  ");
@@ -301,7 +315,6 @@ void end_screen()//----------------------------------通关画面
     else{
         set_color(0,11);printf("%3d 步 %8.3lf 秒\n",BESTS[CHOSEN].first,BESTS[CHOSEN].second/1000.0);}
     set_color(0, 7);printf("   按 ENTER 键继续……");
-    fflush(stdout);
     for(;;)
     {
         set_color(0,Rand_color());
@@ -491,7 +504,6 @@ int main()
         /* ---------- 游戏结束提示 ---------- */
         set_color(0,11);printf(" -------------------------------------------------\n");
         set_color(0, 7);printf("   按 ESC 或 Q 退出游戏，按任意键返回选关\n");
-        fflush(stdout);
         key=_getch();
         if(key==27 || key=='q' || key=='Q') break;
     }
