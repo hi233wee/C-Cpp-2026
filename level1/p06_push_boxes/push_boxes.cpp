@@ -516,55 +516,59 @@ void find_level() {//-----------------------------------扫描关卡文件夹
 //控制台//
 
 void set_console_font() {//-----------------------------改字体
-    CONSOLE_FONT_INFOEX a={sizeof(a)};
-    a.dwFontSize.Y=16;
-    wcscpy_s(a.FaceName,L"Lucida Console");
-    SetCurrentConsoleFontEx(handle_output,FALSE,&a);
+    CONSOLE_FONT_INFOEX C_font = {};
+    C_font.cbSize       = sizeof(C_font);
+    C_font.dwFontSize.Y = 16;
+    wcscpy_s(C_font.FaceName, L"Lucida Console");
+    SetCurrentConsoleFontEx(handle_output, FALSE, &C_font);
 }
 
 void lock_window() {//----------------------------------不让动窗口大小
-    HWND a=GetConsoleWindow();
-    SetWindowLongPtrA(a,GWL_STYLE,GetWindowLongPtrA(a,GWL_STYLE)&~(LONG_PTR)(WS_THICKFRAME|WS_MAXIMIZEBOX));
-    SetWindowPos(a,NULL,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+    HWND     C_W   = GetConsoleWindow();
+    LONG_PTR W_LP  = GetWindowLongPtrA(C_W, GWL_STYLE);
+    SetWindowLongPtrA(C_W, GWL_STYLE, W_LP & ~WS_THICKFRAME);
 }
 
 void set_console_size(SHORT W, SHORT H) {//-------------设窗口和缓冲区大小
+    //规范W,H//
     if(W<min_W) W=min_W;
     if(H<min_H) H=min_H;
-    COORD mx=GetLargestConsoleWindowSize(handle_output);
-    if(W>mx.X) W=mx.X;
-    if(H>mx.Y) H=mx.Y;
-    CONSOLE_SCREEN_BUFFER_INFO a;
-    GetConsoleScreenBufferInfo(handle_output,&a);
-    COORD b={a.dwSize.X<W?W:a.dwSize.X,
-             a.dwSize.Y<H?H:a.dwSize.Y};
-    SetConsoleScreenBufferSize(handle_output,b);//放大缓冲区
-    SMALL_RECT c={0,0,SHORT(W-1),SHORT(H-1)};
-    SetConsoleWindowInfo(handle_output,TRUE,&c);//设窗口大小
-    SetConsoleScreenBufferSize(handle_output,{W,H});//缩缓冲区到没有滚动条
+    COORD C_W_max     = GetLargestConsoleWindowSize(handle_output);
+    if(W> C_W_max.X) W=C_W_max.X;
+    if(H> C_W_max.Y) H=C_W_max.Y;
+    //放大缓冲区//
+    CONSOLE_SCREEN_BUFFER_INFO Buf_info;
+    GetConsoleScreenBufferInfo(handle_output, &Buf_info);
+    COORD Buf_size    = { Buf_info.dwSize.X <W ? W : Buf_info.dwSize.X,
+                          Buf_info.dwSize.Y <H ? H : Buf_info.dwSize.Y };
+    SetConsoleScreenBufferSize(handle_output, Buf_size);
+    //设窗口大小//
+    SMALL_RECT W_size = { 0, 0, SHORT(W-1), SHORT(H-1) };
+    SetConsoleWindowInfo(handle_output, TRUE, &W_size);
+    SetConsoleScreenBufferSize(handle_output, {W,H}  );//缩缓冲区到没有滚动条
 }
 
 void hide_cursor() {//----------------------------------隐藏光标
-    CONSOLE_CURSOR_INFO a;
-    a.bVisible=0;
-    a.dwSize=1;
-    SetConsoleCursorInfo(handle_output,&a);
+    CONSOLE_CURSOR_INFO Cur_info;
+    Cur_info.bVisible =FALSE;
+    Cur_info.dwSize   =1;
+    SetConsoleCursorInfo(handle_output, &Cur_info);
 }
 
 void gotoxy(short x, short y) {//-----------------------移动光标
-    COORD a={x,y};
-    SetConsoleCursorPosition(handle_output,a);
+    COORD Cur_pos={x,y};
+    SetConsoleCursorPosition(handle_output, Cur_pos);
 }
 
 void get_console_size(int& w, int& h) {//---------------获取控制台宽高
-    CONSOLE_SCREEN_BUFFER_INFO a;
-    GetConsoleScreenBufferInfo(handle_output,&a);
-    w=a.srWindow.Right-a.srWindow.Left+1;
-    h=a.srWindow.Bottom-a.srWindow.Top+1;
+    CONSOLE_SCREEN_BUFFER_INFO Buf_info;
+    GetConsoleScreenBufferInfo(handle_output, &Buf_info);
+    w = Buf_info.srWindow.Right  - Buf_info.srWindow.Left +1;
+    h = Buf_info.srWindow.Bottom - Buf_info.srWindow.Top  +1;
 }
 
 void set_color(int BG, int FG) {//----------------------设置颜色, BG背景, FG前景
-    SetConsoleTextAttribute(handle_output,(WORD)((BG<<4)|FG));
+    SetConsoleTextAttribute(handle_output, (WORD)((BG<<4)|FG));
 }
 
 //随机函数//
