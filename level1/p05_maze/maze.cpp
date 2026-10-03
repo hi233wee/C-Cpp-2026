@@ -41,7 +41,7 @@ void set_screen ();
 void end_screen ();
 
 char player='7';
-int player_A=10, wall_A=7, BG_A=0;
+int  player_A=10, wall_A=7, BG_A=0;
 void pick_symbol ();
 void show_color_table ();
 void pick_color (int&A, const string& T, int Def);
@@ -54,7 +54,7 @@ void draw_maze ();
 
 double MS; //--------------------计时
 void start ();
-bool run_game ();
+void run_game ();
 
 int main () {
     //初始化//
@@ -68,6 +68,7 @@ int main () {
 
     main_screen();
 
+    set_color( 0, 7);
     return 0;
 } //随机迷宫+一堆功能
 
@@ -79,8 +80,8 @@ void start () { //--------------------------------------开始
     set_console_size(maze_W, maze_H+2);
     get_console_size(C_col, C_row);
     //计算偏移//
-    OX =(C_col -maze_W) /2   ;
-    OY =(C_row -maze_H) /2 -1;
+    OX = (C_col -maze_W) /2   ;
+    OY = (C_row -maze_H) /2 -1;
     //迷宫, 开!//
     maze.clear();
     generate_maze();
@@ -90,15 +91,10 @@ void start () { //--------------------------------------开始
     set_color(BG_A, wall_A);
     printf("↑↓←→ w/s/a/d 移动 | esc 退出 | S 入口  E 出口 "); //45
 
-    bool o=run_game();
-
-    set_color( 0, 7); //防止背景色
-    set_console_size(0, 0); //复原
-
-    if(o) end_screen();
+    run_game(); //结束放在里面
 }
 
-bool run_game () { //-----------------------------------运行游戏
+void run_game () { //-----------------------------------运行游戏
     //玩家放到入口//
     int px=2, py=1;
     gotoxy(px+OX, py+OY); set_color(BG_A, player_A);
@@ -112,7 +108,7 @@ bool run_game () { //-----------------------------------运行游戏
     //运动和打印//
     for(;;) {
         key=_getch();
-        if(key==27) return 0;
+        if(key==27) return;
         //方向//
         dx=0, dy=0;
         switch(key) {
@@ -150,8 +146,12 @@ bool run_game () { //-----------------------------------运行游戏
         //到终点//
         if(maze[py][px]==69) { //'E'
             QueryPerformanceCounter(&end); //结束计时
-            MS=(double)(end.QuadPart-start.QuadPart)/frequency.QuadPart*1000;
-            return 1;
+            MS =(double)(end.QuadPart - start.QuadPart) /frequency.QuadPart *1000;
+
+            set_color( 0, 7); //防止背景色
+            set_console_size(0, 0); //复原
+            end_screen();
+            return;
         }
     }
 }
@@ -387,16 +387,15 @@ void end_screen () { //---------------------------------通关画面
     put_line(11, 6,14,          L"*     Y O U    W I N ! !     *");
     put_line(13, 7,14,            L"*    *    *    *    *    *");
     put_line(13, 8,14,            L"通关总耗时: ");
-    gotoxy(25, 8);
-    set_color( 0,11);
-    if(m>0) printf("%d 分 %.4lf 秒\n", m, s);
-    else    printf(      "%.4lf 秒\n",    s);
-    put_line( 1, 9, 7, L"按'enter'继续...");
+    gotoxy(25, 8); set_color( 0,11);
+    if(m>0) printf("%d 分 %.3lf 秒\n", m, s);
+    else    printf(      "%.3lf 秒\n",    s);
+    put_line( 1, 9, 7, L"按'esc'退出");
     //闪烁+退出//
     for(;;) {
-        put_line(17, 6, Rand_color(), L"Y O U    W I N ! !");
+        put_line(17, 6, Rand_color(), L"Y O U   W I N ! !");
         Sleep(100);
-        if(_kbhit()) if(_getch()==13) break;
+        if(_kbhit()) if(_getch()==27) return;
     }
 }
 
