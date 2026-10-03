@@ -32,12 +32,12 @@ const char* COLOR_NAMES[16]= //--颜色模版
 {"黑色","深蓝","深绿","青色","深红","紫色","暗黄","浅灰","深灰","亮蓝","亮绿","亮青","亮红","亮紫","黄色","白色"};
 // 0      1      2      3     4      5      6      7     8      9     10     11     12     13    14     15  //
 
+string tolower (string s);
 void then ();
 bool is_wide (wchar_t c);
 int  disp_width (wstring s);
 void put_line (SHORT x, SHORT y, WORD A, wstring s);
 
-const string STOCK=R"(stock.warehouse)"; //仓库文件
 struct things
 {
     string name;
@@ -45,10 +45,10 @@ struct things
     LL n;
 }; //----------------------------物品
 vector<things> stock, tmp; //----库存, 临时
-string tolower (string s);
 void search (string name);
 void update (string name, LL n);
 
+const string STOCK=R"(stock.warehouse)"; //仓库文件
 bool load ();
 bool save ();
 
@@ -73,8 +73,7 @@ int main () {
     system("cls");
 
     //读仓库//
-    if(!load())
-    {
+    if(!load()) {
         set_color( 0,11);
         printf("\n\t我很不幸地告诉你,\n");               then();
         printf("\t仓库打开失败了. \n");                  then();
@@ -90,8 +89,7 @@ int main () {
     main_screen();
 
     //写仓库//
-    if(!save())
-    {
+    if(!save()) {
         set_color( 0,11);
         printf("\n\t要是你看见这句话了, 说明你很幸运, \n");   then();
         printf("\t因为你保存失败了. \n");                    then();
@@ -140,22 +138,22 @@ void main_screen () { //--------------------------------主界面
         put_line(27,16,10,                 L"esc 退出");
 
         int key;
-        for(;;)
-        {
+        for(;;) {
             key=_getch();
-            switch(key)
-            {
-                case 49: check_screen(); goto BACK; //'1'
-                case 50:    in_screen(); goto BACK; //'2'
-                case 51:   out_screen(); goto BACK; //'3'
-                case 52: reset_screen(); goto BACK; //'4'
-                case 27 :                return;
+            switch(key) {
+            case 49: check_screen(); goto BACK; //'1'
+            case 50:    in_screen(); goto BACK; //'2'
+            case 51:   out_screen(); goto BACK; //'3'
+            case 52: reset_screen(); goto BACK; //'4'
+            case 27 :                return;
             }
         }
     }
 }
 
 void check_screen () { //-------------------------------查看
+    int key;
+    size_t page=1, id, i; //页码, 本页最大下标+1, 循环下标
     string name=""; //搜索名
     BACKBACK:
     system("cls");
@@ -163,21 +161,21 @@ void check_screen () { //-------------------------------查看
     put_line( 7, 2, 7, L"║           ┌──────────┐           ║");
     put_line( 7, 3, 7, L"║           │ 你的仓库 │           ║");
     put_line( 7, 4, 7, L"║           └──────────┘           ║");
-    put_line( 7, 5, 7, L"║                                  ║");
-    put_line( 7, 6, 7, L"║  数量                            ║");
-    put_line( 7, 7, 7, L"║                                  ║");
-    put_line( 7, 8, 7, L"║  数量                            ║");
-    put_line( 7, 9, 7, L"║                                  ║");
-    put_line( 7,10, 7, L"║  数量                            ║");
-    put_line( 7,11, 7, L"║                                  ║");
-    put_line( 7,12, 7, L"║  数量                            ║");
-    put_line( 7,13, 7, L"║                                  ║");
-    put_line( 7,14, 7, L"║  数量                            ║");
-    put_line( 7,15, 7, L"║                                  ║");
-    put_line( 7,16, 7, L"║  数量                            ║");
-    put_line( 7,17, 7, L"║                                  ║");
-    put_line( 7,18, 7, L"║  数量                            ║");
-    put_line( 7,19, 7, L"║                                  ║"); //15行
+    put_line( 7, 5, 7, L"║  7                               ║");
+    put_line( 7, 6, 7, L"║  数量 7                          ║");
+    put_line( 7, 7, 7, L"║  77                              ║");
+    put_line( 7, 8, 7, L"║  数量 77                         ║");
+    put_line( 7, 9, 7, L"║  777                             ║");
+    put_line( 7,10, 7, L"║  数量 777                        ║");
+    put_line( 7,11, 7, L"║  7777                            ║");
+    put_line( 7,12, 7, L"║  数量 7777                       ║");
+    put_line( 7,13, 7, L"║  77777                           ║");
+    put_line( 7,14, 7, L"║  数量 77777                      ║");
+    put_line( 7,15, 7, L"║  777777                          ║");
+    put_line( 7,16, 7, L"║  数量 777777                     ║");
+    put_line( 7,17, 7, L"║  7777777                         ║");
+    put_line( 7,18, 7, L"║  数量 7777777                    ║");
+    put_line( 7,19, 7, L"║                                  ║"); //这一行可别加
     put_line( 7,20, 7, L"║ ←↑上一页   第 7777 页   下一页↓→ ║");
     put_line( 7,21, 7, L"╟──────────┬────────────┬──────────╢");
     put_line( 7,22, 7, L"║ 方向换页 │ s 进入搜索 │ esc 返回 ║");
@@ -185,18 +183,9 @@ void check_screen () { //-------------------------------查看
     put_line(19, 2,10,            L"┌──────────┐");
     put_line(19, 3,10,            L"│ 你的仓库 │");
     put_line(19, 4,10,            L"└──────────┘");
-    put_line(10, 6, 8,    L"数量");
-    put_line(10, 8, 8,    L"数量");
-    put_line(10,10, 8,    L"数量");
-    put_line(10,12, 8,    L"数量");
-    put_line(10,14, 8,    L"数量");
-    put_line(10,16, 8,    L"数量");
-    put_line(10,18, 8,    L"数量");
     put_line( 9,22,10,  L"方向换页");
     put_line(20,22,10,             L"s 进入搜索");
     put_line(33,22,10,                          L"esc 返回");
-
-    int key; size_t page=1, id, i; //无符号有个大坑
     BACK:
     //打印搜索//
     if(!name.empty()) {
@@ -209,41 +198,38 @@ void check_screen () { //-------------------------------查看
     gotoxy(23,20); set_color( 0, 7);
     printf("%4zu", page);
     //打印物品//
-    id =min(page*7, tmp.size()); //上界+1
-    if(page*7>=id) //满
-        for(i=page*7-7; i<id; ++i)
-        {
-            erase_line(i%7*2 +5); //万一你输了很长的呢
-            put_line( 7, i%7*2+5, 7, L"║                                  ║");
-            gotoxy(10, i%7*2 +5); set_color( 0,14);
-            fputs(tmp[i].name.c_str(), stdout);
-            gotoxy(15, i%7*2 +6); set_color( 0,11);
-            printf("%-27lld", tmp[i].n);
-        }
-    if(id<page*7) //没满
-        for(i=id; i<page*7; ++i)
-        {
-            erase_line(i%7*2 +5); //万一你输了很长的呢
-            put_line( 7, i%7*2+5, 7, L"║                                  ║");
-            put_line( 7, i%7*2+6, 7, L"║                                  ║");//把数量也去掉
-        }
+    id = page*7 > tmp.size()? tmp.size() : page*7; //上界+1
+    for(i=page*7-7; i<id; ++i) {
+        erase_line(i%7 *2 +5); //万一你输了很长的呢
+        put_line( 7, i%7*2+5, 7, L"║                                  ║");
+        put_line(10, i%7*2+6, 8,    L"数量");
+        
+        gotoxy(10, i%7 *2 +5); set_color( 0,14);
+        fputs(tmp[i].name.c_str(), stdout);
+        gotoxy(15, i%7 *2 +6); set_color( 0,11);
+        printf("%-27lld", tmp[i].n);
+    }
+    for(i=id; i<page*7; ++i) { //没满
+        erase_line(i%7*2 +5); //万一你输了很长的呢
+        put_line( 7, i%7*2+5, 7, L"║                                  ║");
+        put_line( 7, i%7*2+6, 7, L"║                                  ║");//把"数量"去掉
+    }
     //按键//
-    for(;;)
-    {
+    for(;;) {
         key=_getch();
-        switch(key)
-        {
-            case 27:           return;
-            case 115: case 83: //'s' 'S'
-                search_screen(name);
-                page=1;
-                goto BACKBACK;
-            case 0: case 224:
-                key=_getch();
-                switch(key){
-                    case 72: case 75: page--; break;
-                    case 77: case 80: page++; break;
-                }goto BACK;
+        switch(key) {
+        case 0: case 224: //方向键
+            key=_getch();
+            switch(key){
+            case 72: case 75: page--; break;
+            case 77: case 80: page++; break;
+            }
+            goto BACK;
+        case 115: case 83: //'s' 'S'
+            search_screen(name);
+            page=1;
+            goto BACKBACK;
+        case 27: return;
         }
     }
 }
@@ -274,7 +260,7 @@ bool input_screen (string&name, LL&n) { //--------------进出库输入
     put_line( 8, 9, 7, L"│  enter 确认  │ 输入空白返回 │");
     put_line( 8,10, 7, L"└──────────────┴──────────────┘");
     put_line( 8,11, 7, L"┌──────┐");
-    put_line( 8,12, 7, L"│      │");
+    put_line( 8,12, 7, L"│ ———— │");
     put_line( 8,13, 7, L"└──────┘");
     put_line(11, 9,10,    L"enter 确认");
     put_line(25, 9,10,                  L"输入空白返回"); //你知道写输入中返回有多难吗
@@ -300,7 +286,7 @@ bool input_screen (string&name, LL&n) { //--------------进出库输入
     gotoxy( 3,14); set_color( 0, 7); //同上
     getline(cin, name);
     if(name.empty()) { hide_cursor(); goto BACK; }
-    for(size_t i=name.size(); i--;) //改成'_'
+    for(size_t i =name.size(); i--;) //改成'_'
         if(isspace(name[i])) name[i]='_'; //所有cin会停的都改
 
     hide_cursor();
@@ -311,11 +297,11 @@ bool confirm_screen (const string&name, const LL&n) { //确认进出库
     system("cls");
     put_line(11, 7, 7, L"╔═════════════════════════╗");
     put_line(11, 8, 7, L"║ 你的名字:               ║");
-    put_line(11, 9, 7, L"║                         ║"); //太长就冲出去了
+    put_line(11, 9, 7, L"║ 77                      ║"); //太长就冲出去了
     put_line(11,10, 7, L"║ 你的数量:               ║");
-    put_line(11,11, 7, L"║                         ║");
+    put_line(11,11, 7, L"║ 77                      ║");
     put_line(11,12, 7, L"║ 已有数量:               ║");
-    put_line(11,13, 7, L"║                         ║");
+    put_line(11,13, 7, L"║ 77                      ║");
     put_line(11,14, 7, L"╟────────────┬────────────╢");
     put_line(11,15, 7, L"║ enter 确认 │  esc 返回  ║");
     put_line(11,16, 7, L"╚════════════╧════════════╝");
@@ -325,15 +311,14 @@ bool confirm_screen (const string&name, const LL&n) { //确认进出库
     put_line(13,15,10,   L"enter 确认");
     put_line(27,15,10,                 L"esc 返回");
 
-    vector<things>::iterator it=find_if(stock.begin(), stock.end(), [&name](const things&a){return a.name==name; });
-    gotoxy(15, 9); set_color( 0,14); fputs(name.c_str(), stdout);
-    gotoxy(15,11); set_color( 0, 3); printf("%lld", n);
-    gotoxy(15,13); set_color( 0, 3); printf("%lld", it==stock.end()? 0 : it->n);
+    vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){return a.name==name; });
+    gotoxy(13, 9); set_color( 0,14); fputs(name.c_str(), stdout);
+    gotoxy(13,11); set_color( 0, 3); printf("%-23lld", n);
+    gotoxy(13,13); set_color( 0, 3); printf("%-23lld", it==stock.end()? 0 : it->n);
 
     FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE)); //清空输入缓冲'\n'
     int key;
-    for(;;)
-    {
+    for(;;) {
         key=_getch();
         if(key==27) return 0;
         if(key==13) break;
@@ -349,7 +334,7 @@ void in_screen () { //----------------------------------入库
     set_color( 0, 7); gotoxy( 6,11);
     then();
     string name; LL n;
-    for(;;){
+    for(;;) {
         if(! input_screen(name, n)) return; //空输入退出
         if(confirm_screen(name, n)) break ; //确认了继续
     }
@@ -373,12 +358,12 @@ void out_screen () { //---------------------------------出库
     set_color( 0, 7); gotoxy( 6,12);
     then();
     string name; LL n;
-    for(;;){
+    for(;;) {
         if(! input_screen(name, n)) return; //空输入退出
         if(confirm_screen(name, n)) break ; //确认了继续
     }
     //判断仓库有没有//
-    vector<things>::iterator it=find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
+    vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
     if(it==stock.end()) {
         put_line(15,17,12, L"东西都没有你出个蛋"); //接着确认界面
         gotoxy( 0,18); set_color( 0, 7);
@@ -411,8 +396,7 @@ void reset_screen () { //-------------------------------重置
     put_line(20, 7,12,                 L"enter");
 
     int key;
-    for(;;)
-    {
+    for(;;) {
         key=_getch();
         if(key==13) break; //enter
         if(key==27) return; //esc
@@ -446,35 +430,29 @@ bool load () { //---------------------------------------读取库存
 }
 
 bool save () { //---------------------------------------保存
-    ofstream S(STOCK+".tmp");
+    ofstream S(STOCK + ".tmp");
     if(!S.is_open()) return 0;
-    for(auto i:stock)
+    for(auto i : stock)
         S <<i.name <<' ' <<i.n <<'\n';
     S.close(); //防止阻碍合并
     error_code ec;
-    filesystem::rename(STOCK+".tmp", STOCK, ec); //合并
+    filesystem::rename(STOCK + ".tmp", STOCK, ec); //合并
     if(ec) return 0; //有错误信息
     return 1;
 }
 
 //数据//
 
-string tolower (string s) { //--------------------------转小写
-    for(size_t i=s.size(); i--;)
-        if(65<=s[i] && s[i]<=90) s[i]+=32;//用ASCLL算
-    return s;
-}
-
 void search (string name) { //--------------------------将搜索到的放入tmp
     tmp.clear(); //不清等死
-    name=tolower(name);
+    name =tolower(name);
     for(size_t i=0; i<stock.size(); ++i)
-        if(stock[i].lower.find(name)!=string::npos)
+        if(stock[i].lower.find(name) != string::npos)
             tmp.push_back(stock[i]);
 }
 
 void update (string name, LL n) { //--------------------更新库存数据(区分大小写)
-    vector<things>::iterator it=find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
+    vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
     //[&]所有外部引用捕获,[=]值捕获,[&x][=x]只捕获x,[=,&x]默认 值捕获,x引用//本身固定传入const &
     if(it==stock.end()) {
         if(n<0) return;
@@ -491,6 +469,12 @@ void update (string name, LL n) { //--------------------更新库存数据(区�
 }
 
 //小插件//
+
+string tolower (string s) { //--------------------------转小写
+    for(size_t i=s.size(); i--;)
+        if(65<=s[i] && s[i]<=90) s[i]+=32;//用ASCLL算
+    return s;
+}
 
 void then () { //---------------------------------------等一下
     printf("按任意键继续... ");
