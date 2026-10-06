@@ -17,8 +17,7 @@ void erase_line (int y);
 
 uLL rd ();
 
-struct linked_list
-{
+struct linked_list {
     LL V;           //值
     linked_list* N; //下一项
 };
@@ -40,7 +39,7 @@ int main () {
     system("cls");
     printf("请输入链表的长度\n  ");
     n=rd();
-    if(n==0) { printf("长度为零?"); return 0; }
+    if (n==0) { printf("长度为零?"); return 0; }
 
     printf("请输入链表中元素的取值范围\n");
     printf("   下界: "); L=rd();
@@ -53,28 +52,27 @@ int main () {
     uniform_int_distribution<LL> RAND(L, R);
     //我的链表头存值//
     linked_list* head=nullptr;
-    linked_list* it; //记录找到哪了
     //创建, 输出, 翻转//
-    for(size_t i=n+1; --i;) add(head, Rand());
+    for (size_t i=n+1; --i;) { add(head, Rand()); }
     putn(head);
     reverse(head);
     //找5//
     printf("然后我会尝试找第一个5\n");
     printf("  并返回它的位置\n");
-    it=head;
+    linked_list* it=head; //记录找到哪了
     size_t id=1;
     char c;
-    for(;;) {
+    for (;;) {
         find_5(it, id);
         printf("请按'ENTER'继续找下一个5, 或按'ESC'退出");
-        for(;;) {
+        for (;;) {
             c=_getch();
-            if(c==27){
+            if (c==27) {
                 erase_line(get_cursor_line());
-                Free(head);//释放
+                Free(head); //释放
                 return 0;
             }
-            else if(c==13) break;
+            else if (c==13) break;
         }
         erase_line(get_cursor_line());
         gotoxy( 0, get_cursor_line());
@@ -94,23 +92,23 @@ void add (linked_list*& h, LL v) { //-------------------添加(头插)
 void reverse (linked_list*& h) { //---------------------反转
     linked_list* i=nullptr; //下一个
     linked_list* p=nullptr; //上一个
-                        //h//这一个
+                         //h//这一个
     i = h->N;
-    while(i) {
-        h->N =p;
-           p =h;
-           h =i;
-           i =i->N;
+    while (i) {
+        h->N = p;
+           p = h;
+           h = i;
+           i = i->N;
     }
     h->N = p;
 }
 
 void Free (linked_list*& h) { //------------------------释放空间
     linked_list* p;
-    while(h->N) {
-        p =h->N;
+    while (h->N) {
+        p = h->N;
         free(h);
-        h =p;
+        h = p;
     }
     free(h);
     h=nullptr;
@@ -118,20 +116,20 @@ void Free (linked_list*& h) { //------------------------释放空间
 
 void putn (const linked_list* i) { //-------------------输出整个链表
     t =tt =0;
-    while(i) {
+    while (i) {
         x = i->V;
-        if(x<0) {
-            tmp[tt++]='-';
-            x =-x;
-        }
-        if(x==0) tmp[tt++]='0';
-        while(x) {
+
+        if (x<0) { tmp[tt++]='-'; x =-x; }
+        if (x==0) { tmp[tt++]='0'; }
+
+        while (x) {
             tmp[tt++]= x%10 +48;
             x /=10;
         }
-        while(tt) s[t++]=tmp[--tt];
+
+        while (tt) { s[t++]=tmp[--tt]; }
         s[t++]='\n';
-        if(t>7777700) {
+        if (t>7777700) {
             fwrite(s, 1, t, stdout); //分块
             t=0;
         }
@@ -141,8 +139,8 @@ void putn (const linked_list* i) { //-------------------输出整个链表
 }
 
 void find_5 (linked_list*& i, size_t& id) { //----------找第一个值为5的节点
-    while(i) {
-        if(i->V==5) {
+    while (i) {
+        if (i->V==5) {
             printf("%llu\n", id);
             i = i->N;
             id++;
@@ -158,9 +156,10 @@ void find_5 (linked_list*& i, size_t& id) { //----------找第一个值为5的�
 
 uLL rd () {
     int c=getchar(); uLL x=0;
-    while(c!=EOF && !isdigit(c)) c=getchar();
-    if(c==EOF) return 0; //ai说有神秘原因会输入这个
-    while(isdigit(c)) { x=x*10+c-48; c=getchar(); }
+    while (c!=EOF && !isdigit(c)) { c=getchar(); }
+    if (c==EOF) { return 0; } //ai说有神秘原因会输入这个
+    while (isdigit(c))
+    { x = x*10 +c -48; c=getchar(); }
     return x;
 }
 //控制台//

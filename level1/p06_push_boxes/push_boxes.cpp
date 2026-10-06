@@ -31,6 +31,9 @@ bool is_wide (wchar_t c);
 int  disp_width (wstring s);
 void put_line (SHORT x, SHORT y, WORD A, wstring s);
 
+const string DIR=R"(levels\)"; //--------------关卡文件夹
+const string NAME=R"(level_*)"; //-------------关卡命名方式
+const string EXTENTION=R"(.push_boxes)"; //----关卡后缀
 vector<string> LEVELS; //----------------------关卡目录(名字)
 string base_name (string s);
 int  level_num (const string& s);
@@ -38,16 +41,15 @@ void find_level ();
 
 const string SCORE=R"(score.push_boxes)"; //---成绩文件夹
 const string SKIN=R"(skins.push_boxes)"; //----皮肤文件
-const string DIR=R"(levels\)"; //--------------关卡文件夹
-const string NAME=R"(level_*)"; //-------------关卡命名方式
-const string EXTENTION=R"(.push_boxes)"; //----关卡后缀
 map<string, pair<int, int> > BESTS; //---------每关历史最佳步数和时间(名字)
+vector< vector<string> > SKINS; //-------------皮肤表
 string DISP[256]; //---------------------------字符映射
 void load_scores ();
 bool save_score ();
 void load_skins ();
 bool load_level ();
 
+vector<size_t> skin; //----------当前选的皮肤
 string CHOSEN; //----------------选的关卡(名字)
 vector<string> MAP; //-----------地图
 int TARGET, ON; //---------------目标/被填满的目标
@@ -57,10 +59,11 @@ int OX, OY; //-------------------偏移量
 int STEP, MS; //-----------------步数/秒数
 
 void main_screen ();
-void choose_screen ();
+void level_screen ();
 void skin_screen ();
 bool end_screen ();
 
+void set_skins ();
 void draw_cell (int x, int y);
 void draw_map ();
 
@@ -76,9 +79,10 @@ int main () {
     lock_window();
     set_console_size(0, 0);
     hide_cursor();
-    for(int i=0; i<256; ++i) DISP[i]=i; //怎么还有重载啊
+    for (int i=0; i<256; ++i) { DISP[i]=i; }  //怎么=还有重载啊
 
     load_scores();
+    system("cls"); //万一你两个都有问题呢
     load_skins();
     main_screen();
 
@@ -92,12 +96,14 @@ void start () {
     BACK: //我重生了
     system("cls");
     //读关//
-    if(!load_level()) {
+    if (!load_level()) {
         put_line( 2, 1,12,   L"你这关卡不对吧");
         put_line( 2, 2, 7, L"按任意键继续...");
         _getch();
         return;
     }
+    //皮肤//
+    set_skins();
     //画图//
     set_console_size(map_W, MAP.size() +4); //上下留两行
     get_console_size(C_col, C_row);
@@ -109,35 +115,35 @@ void start () {
     printf("%s", CHOSEN.c_str());
     put_line((C_col-36)/2, C_row-2, 7, L"↑↓←→ w/s/a/d 移动 | esc 退出 | r 重开"); //36
     //游戏//
-    if(run_game()) goto BACK; //结束放在里面
+    if (run_game()) { goto BACK; } //结束放在里面
 }
 
 void map_change (int x, int y, int nx, int ny) { //-----修改地图
-    switch(MAP[y][x]) {
+    switch (MAP[y][x]) {
     case 36: //'$'
         MAP[y][x]=32; //' '
-        switch(MAP[ny][nx]) {
+        switch (MAP[ny][nx]) {
         case 46: MAP[ny][nx]=42; ON++; break; //'.' '*'
         case 32: MAP[ny][nx]=36; break; //' ' '$'
         } break;
 
     case 64: //'@'
         MAP[y][x]=32; //' '
-        switch(MAP[ny][nx]) {
+        switch (MAP[ny][nx]) {
         case 46: MAP[ny][nx]=43; break; //'.' '+'
         case 32: MAP[ny][nx]=64; break; //' ' '@'
         } break;
 
     case 42: //'*'
         MAP[y][x]=46; ON--; //'.'
-        switch(MAP[ny][nx]) {
+        switch (MAP[ny][nx]) {
         case 46: MAP[ny][nx]=42; ON++; break; //'.' '*'
         case 32: MAP[ny][nx]=36; break; //' ' '$'
         } break;
 
     case 43: //'+'
         MAP[y][x]=46; //'.'
-        switch(MAP[ny][nx]) {
+        switch (MAP[ny][nx]) {
         case 46: MAP[ny][nx]=43; break; //'.' '+'
         case 32: MAP[ny][nx]=64; break; //' ' '@'
         } break;
@@ -153,14 +159,14 @@ bool run_game () { //-----------------------------------进行游戏
     //主循环//
     int key, dx, dy, nx, ny, bx, by; //方向 前面 前前面
     bool PUSHED;
-    for(;;) {
+    for (;;) {
         dx =dy =0;
 
         key=_getch();
-        switch(key) {
+        switch (key) {
         case 0: case 224: // 功能键 / 方向键
             key=_getch();
-            switch(key){
+            switch (key) {
             case 72:  dy=-1; break; // ↑
             case 80:  dy= 1; break; // ↓
             case 75:  dx=-1; break; // ←
@@ -173,23 +179,23 @@ bool run_game () { //-----------------------------------进行游戏
         case 114: case 82: return 1; //'r' 'R'
         case 27:           return 0;
         }
-        if(dx==0 && dy==0) continue;
+        if (dx==0 && dy==0) { continue; }
         //前面//
         nx = px+dx;
         ny = py+dy;
-        if(ny<0 || ny>=(int)MAP.size() || nx<0 || nx>=(int)MAP[ny].size()) continue; //防止越界
-        if(MAP[ny][nx]==35 || MAP[ny][nx]==55) continue; //撞墙/边界//'#' '7'
+        if (ny<0 || ny>=(int)MAP.size() || nx<0 || nx>=(int)MAP[ny].size()) { continue; } //防止越界
+        if (MAP[ny][nx]==35 || MAP[ny][nx]==55) { continue; } //撞墙/边界//'#' '7'
         //前面箱子//
         PUSHED =0;
-        if(MAP[ny][nx]==36 || MAP[ny][nx]==42) { //前面是箱子//'$' '*'
+        if (MAP[ny][nx]==36 || MAP[ny][nx]==42) { //前面是箱子//'$' '*'
             bx = nx+dx;
             by = ny+dy;
-            if(by<0 || by>=(int)MAP.size() || bx<0 || bx>=(int)MAP[by].size()) continue; //防止越界
-            if(MAP[by][bx]==35 || MAP[by][bx]==55) continue; //箱子撞墙/边界//'#' '7'
-            if(MAP[by][bx]==36 || MAP[by][bx]==42) continue; //箱子顶箱子//'$' '*'
+            if (by<0 || by>=(int)MAP.size() || bx<0 || bx>=(int)MAP[by].size()) { continue; } //防止越界
+            if (MAP[by][bx]==35 || MAP[by][bx]==55) { continue; }  //箱子撞墙/边界//'#' '7'
+            if (MAP[by][bx]==36 || MAP[by][bx]==42) { continue; }  //箱子顶箱子//'$' '*'
             PUSHED =1;
         }
-        if(PUSHED) {
+        if (PUSHED) {
             map_change(nx, ny, bx, by); //推!
             draw_cell(bx, by);
         }
@@ -200,7 +206,7 @@ bool run_game () { //-----------------------------------进行游戏
         py =ny;
         STEP++;
         //判断箱子归位//
-        if(ON==TARGET) {
+        if (ON==TARGET) {
             QueryPerformanceCounter(&end); //结束计时
             MS =(double)(end.QuadPart - start.QuadPart) /frequency.QuadPart *1000;
 
@@ -213,9 +219,15 @@ bool run_game () { //-----------------------------------进行游戏
 
 //绘制//
 
+void set_skins () { //----------------------------------设置皮肤
+    for (size_t i=0; i < SKINS.size(); ++i) {
+        DISP[(unsigned char)SKINS[i][0][0]] = SKINS[i][skin[i]]; //非ASCLL首位大于127
+    }
+}
+
 void draw_cell (int x, int y) { //----------------------画一格
     gotoxy(x+OX, y+OY);
-    switch(MAP[y][x]) {
+    switch (MAP[y][x]) {
         case 36: set_color( 0, 6); fputs(DISP[36].c_str(), stdout); break; //'$' //没归位:暗黄
         case 64: set_color( 0,11); fputs(DISP[64].c_str(), stdout); break; //'@' //玩家:青
         case 46: set_color( 0,12); fputs(DISP[46].c_str(), stdout); break; //'.' //目标:红
@@ -223,19 +235,20 @@ void draw_cell (int x, int y) { //----------------------画一格
         case 43: set_color( 0, 3); fputs(DISP[43].c_str(), stdout); break; //'+' //玩家在目标:暗青
         case 35: set_color( 0,15); fputs(DISP[35].c_str(), stdout); break; //'#' //墙
         case 55: set_color( 0, 8); fputs(DISP[55].c_str(), stdout); break; //'7' //边界
-        case 32: set_color( 0, 0); putchar(32);                     break; //' ' //空
+        case 32: set_color( 0, 8); fputs(DISP[32].c_str(), stdout); break; //' ' //空
     }
 }
 
 void draw_map () { //-----------------------------------绘制整个地图
-    for(size_t y=0; y<MAP.size(); y++) for(size_t x=0; x<MAP[y].size(); x++)
+    for (size_t y=0; y<MAP.size(); y++) for (size_t x=0; x<MAP[y].size(); x++) {
         draw_cell(x, y);
+    }
 }
 
 //界面//
 
 void main_screen () { //--------------------------------主界面
-    for(;;) {
+    for (;;) {
         BACK:
         system("cls");
         put_line(14, 4, 7, L"╔════════════════════════╗");
@@ -257,21 +270,21 @@ void main_screen () { //--------------------------------主界面
         put_line(16,11,10,   L"数字选择");
         put_line(30,11,10,                 L"esc 退出");
         int key;
-        for(;;) {
+        for (;;) {
             key=_getch();
-            switch(key) {
+            switch (key) {
             case 27: return;
-            case 49: choose_screen(); goto BACK; //'1'
-            case 50:   skin_screen(); goto BACK; //'2'
+            case 49: level_screen(); goto BACK; //'1'
+            case 50:  skin_screen(); goto BACK; //'2'
             }
         }
     }
 }
 
-void choose_screen () { //------------------------------选关界面
+void level_screen () { //-------------------------------选关界面
     find_level();
     //没有关卡//
-    if(LEVELS.empty()) {
+    if (LEVELS.empty()) {
         system("cls");
         put_line( 2, 7,12,   L"我关卡文件呢?");
         put_line( 2, 8, 7,   L"levels里怎么啥也没有?");
@@ -305,20 +318,20 @@ void choose_screen () { //------------------------------选关界面
     put_line(42,14,10,                                         L"esc 退出");
     BACK:
     //页码//
-    if(page==0) page =(LEVELS.size() +6) /7; //越下界
-    if(LEVELS.size() < page*7 -6) page =1;   //越上界
+    if (page==0) { page =(LEVELS.size() +6) /7; } //越下界
+    if (LEVELS.size() < page*7 -6) { page =1; } //越上界
     gotoxy(25,12); set_color( 0, 7);
     printf("%4zu", page);
     //本页关卡//
     id = page*7 > LEVELS.size()? LEVELS.size() : page*7; //上界+1
-    for(i = page*7 -7; i<id; i++) {
+    for (i = page*7 -7; i<id; i++) {
         gotoxy( 4, i%7 +5);
         //编号与名字//
         set_color( 0,14); printf("%d. ", (int)(i%7 +1));
         set_color( 0, 7); printf("%-9s", LEVELS[i].c_str());
         //历史最佳//
         map<string, pair<int, int> >::iterator it =BESTS.find(LEVELS[i]);
-        if(it != BESTS.end()) {
+        if (it != BESTS.end()) {
             set_color( 0, 3); printf("  最佳: ");
             set_color( 0,11); printf("%4d", it->second.first);
             set_color( 0, 3); printf(" 步  用时 ");
@@ -328,24 +341,24 @@ void choose_screen () { //------------------------------选关界面
             set_color( 0, 8); printf("                   还没有人征服过");
         }
     }
-    for(i=id; i<page*7; ++i) { //没满
+    for (i=id; i<page*7; ++i) { //没满
         put_line( 2, i%7 +5, 7, L"║                                                ║");
     }
     //按键//
-    for(;;) {
+    for (;;) {
         key=_getch();
-        switch(key) {
+        switch (key) {
         case 0: case 224: //方向键
             key=_getch();
-            switch(key){
+            switch (key) {
             case 72: case 75: page--; break;
             case 77: case 80: page++; break;
             }
             goto BACK;
         case 27: return;
         }
-        if(49<=key && key<=55) //'1'-'7'
-            if(page*7 +key -56 < id) { //我已化简
+        if (49<=key && key<=55) //'1'-'7'
+            if (page*7 +key -56 < id) { //我已化简
                 CHOSEN = LEVELS[page*7 +key -56];
                 start();
                 goto BACKBACK;
@@ -353,11 +366,78 @@ void choose_screen () { //------------------------------选关界面
     }
 }
 
-void skin_screen () {
-    //方向选择
-    //-> 7 :
-    //显示当前皮肤
-    //esc 返回
+void skin_screen () { //--------------------------------选皮肤界面
+    //没皮肤//
+    if (SKINS.empty()) {
+        put_line( 3, 0,12,   L"没皮肤?");
+        put_line( 3, 1,14,   L"不管怎样, 我这没有, 你只能用原始的");
+        put_line( 0, 2, 7, L"按任意键继续...");
+        _getch();
+        return;
+    }
+
+    set_console_size(0, 10+SKINS.size());
+    system("cls");
+    put_line(18, 1, 7, L"╔════════════════╗");
+    put_line(18, 2, 7, L"║   ┌────────┐   ║");
+    put_line(18, 3, 7, L"║   │ 选皮肤 │   ║");
+    put_line(18, 4, 7, L"║   └────────┘   ║");
+    for (size_t i=0; i<SKINS.size(); ++i)
+        put_line(18, 5+i, 7, L"║  [ 7 ]  - 7 -  ║");
+    put_line(18, 5+SKINS.size(), 7, L"╟────────────────╢");
+    put_line(18, 6+SKINS.size(), 7, L"║    方向选择    ║");
+    put_line(18, 7+SKINS.size(), 7, L"║ esc 确认并退出 ║");
+    put_line(18, 8+SKINS.size(), 7, L"╚════════════════╝");
+    put_line(24, 3,10,       L"选皮肤");
+    put_line(23, 6+SKINS.size(),10,      L"方向选择");
+    put_line(20, 7+SKINS.size(),10,   L"esc 确认并退出");
+
+    for (size_t i=0; i<SKINS.size(); ++i) {
+        gotoxy(21, 5+i); set_color( 0, 8);
+        printf("  %s    - %s -", SKINS[i][0].c_str(), SKINS[i][skin[i]].c_str());
+    }
+
+    int key;
+    size_t i=0;
+    for (;;) {
+        BACK:
+        //恢复上下//
+        if (i >= 1) {
+            gotoxy(21, 4+i); set_color( 0, 8);
+            printf("  %s    - %s -", SKINS[i-1][0].c_str(), SKINS[i-1][skin[i-1]].c_str());
+        } else { // 选中第一个
+            gotoxy(21, 4+SKINS.size()); set_color( 0, 8);
+            printf("  %s    - %s -", SKINS[SKINS.size()-1][0].c_str(), SKINS[SKINS.size()-1][skin[SKINS.size()-1]].c_str());
+        }
+        if (i+1 < SKINS.size()) {
+            gotoxy(21, 6+i); set_color( 0, 8);
+            printf("  %s    - %s -", SKINS[i+1][0].c_str(), SKINS[i+1][skin[i+1]].c_str());
+        } else { // 选中最后一个
+            gotoxy(21, 5); set_color( 0, 8);
+            printf("  %s    - %s -", SKINS[0][0].c_str(), SKINS[0][skin[0]].c_str());
+        }
+        //选中//
+        put_line(21, 5+i, 7, L"[   ]  -   -");
+        gotoxy(23, 5+i); set_color( 0,14);
+        printf("%s", SKINS[i][0].c_str());
+        gotoxy(30, 5+i); set_color( 0,11);
+        printf("%s", SKINS[i][skin[i]].c_str());
+
+        for (;;) {
+            key=_getch();
+            switch (key) {
+            case 0: case 224:
+                key=_getch();
+                switch (key) { //下标判断太恶心
+                case 72: i ? --i : i = SKINS.size()-1;   goto BACK;
+                case 80: i+1 < SKINS.size() ? ++i : i=0; goto BACK;
+                case 75: skin[i] ? --skin[i] : skin[i] = SKINS[i].size()-1;   goto BACK;
+                case 77: skin[i]+1 < SKINS[i].size() ? ++skin[i] : skin[i]=0; goto BACK;
+                } break;
+            case 27: return;
+            }
+        }
+    }
 }
 
 bool end_screen () { //---------------------------------通关画面
@@ -382,19 +462,19 @@ bool end_screen () { //---------------------------------通关画面
     printf("%4d 步", STEP);
     //最佳//
     gotoxy(14,12);
-    if(save_score()) {
+    if (save_score()) {
         set_color( 0,10); printf("%4d 步 %9.3lf 秒 新纪录! 裱起来!", STEP, MS/1000.0);
     } else {
         set_color( 0,11); printf("%4d 步 %9.3lf 秒", BESTS[CHOSEN].first, BESTS[CHOSEN].second/1000.0);
     }
     //闪烁+退出//
     int key;
-    for(;;) {
+    for (;;) {
         put_line(17, 6, Rand_color(), L"Y O U   W I N ! !");
         Sleep(100);
-        if(_kbhit()) {
+        if (_kbhit()) {
             key=_getch();
-            switch(key) {
+            switch (key) {
             case 27:           return 0;
             case 82: case 114: return 1; //'R' 'r'
             }
@@ -408,7 +488,7 @@ void load_scores () { //--------------------------------读历史最佳
     BESTS.clear();
 
     ifstream in(SCORE);
-    if(!in.is_open()){
+    if (!in.is_open()) {
         put_line( 3, 0,12,   L"出了点小问题, 成绩读取失败了");
         put_line( 3, 1,14,   L"但是并不影响你玩, 对吗?");
         put_line( 0, 2, 7, L"按任意键继续...");
@@ -417,28 +497,28 @@ void load_scores () { //--------------------------------读历史最佳
     }
     string name;
     int step, ms;
-    while(in>>name>>step>>ms)
+    while (in>>name>>step>>ms)
         BESTS[name].first  =step,
         BESTS[name].second =ms  ;
 }
 
 bool save_score () { //---------------------------------保存,返回是否新纪录
     map<string, pair<int, int> >::iterator it=BESTS.find(CHOSEN);
-    if(it!=BESTS.end()) {
-        if(it->second.first<STEP)                           return 0; //步数更差
-        if(it->second.first==STEP && it->second.second<=MS) return 0; //秒数不小
+    if (it!=BESTS.end()) {
+        if (it->second.first<STEP) { return 0; } //步数更差
+        if (it->second.first==STEP && it->second.second<=MS) { return 0; } //秒数不小
     }
     BESTS[CHOSEN].first  =STEP;
     BESTS[CHOSEN].second =MS  ;
     ofstream out(SCORE+".tmp"); //临时文件,防止写到一半停了
-    for(it=BESTS.begin(); it!=BESTS.end(); ++it)
+    for (it=BESTS.begin(); it!=BESTS.end(); ++it)
         out <<it->first        <<" "
             <<it->second.first <<" "
             <<it->second.second<<"\n";
     out.close(); //防止阻碍合并
     error_code ec;
     filesystem::rename(SCORE+".tmp", SCORE, ec); //合并
-    if(ec){ //有错误信息
+    if (ec) { //有错误信息
         put_line( 3, 0,12,   L"emmm, 坏了, 保存失败了");
         put_line( 3, 1,14,   L"哎呀不管了, 先祝贺你再说");
         put_line( 0, 2, 7, L"按任意键继续...");
@@ -448,8 +528,51 @@ bool save_score () { //---------------------------------保存,返回是否新�
 }
 
 void load_skins () {
-    //失败
-    //加载
+    SKINS.clear();
+
+    ifstream in(SKIN);
+    if (!in.is_open()) {
+        put_line( 3, 0,12,   L"噢, 我的上帝, 皮肤文件开不了");
+        put_line( 3, 1,14,   L"所以, 我将以原始皮肤启动!");
+        put_line( 0, 2, 7, L"按任意键继续...");
+        _getch();
+        return;
+    }
+
+    vector<string> tmp;
+    string tmps;
+    int c = in.get(); //一个合法的多字节UTF-8, 中间没有ASCLL
+    while (c!='/' && c!=EOF) {
+        tmp.clear();
+
+        while (c!='\n' && c!=EOF) {
+            tmps.clear();
+
+            do { //完整读多字节, 同时防止跳过第一个' '
+                tmps += c;
+                c = in.get();
+            } while (c!=' ' && c!='\n' && c!=EOF);
+            tmp.push_back(tmps);
+
+            while (c==' ') { c = in.get(); } //去中间空
+        }
+        SKINS.push_back(tmp);
+        if (tmp.size()>=2) { skin.push_back(1); } //默认第二个
+        else               { skin.push_back(0); }
+        //先去空格后去换行, 防止第一个空格被去//
+        while (c==' ' ) { c = in.get(); }  //去末尾空格
+        while (c=='\n') { c = in.get(); }  //去末尾换行
+    }
+    //检查格式并对空格特殊照顾//
+    for (size_t i=0; i < SKINS.size(); ++i) {
+        if (SKINS[i][0][0]==' ') { skin[i]=0; }
+        if (SKINS[i][0].size()!=1) {
+            put_line( 3, 0,12,   L"嘿, 这有皮肤不对劲");
+            put_line( 3, 1,14,   L"虽然但是你应该只有在选皮肤时才能发现");
+            put_line( 0, 2, 7, L"按任意键继续...");
+            _getch();
+        }
+    }
 }
 
 bool load_level () { //---------------------------------读关卡文件
@@ -457,12 +580,12 @@ bool load_level () { //---------------------------------读关卡文件
     map_W=0;
 
     ifstream in(DIR + CHOSEN + EXTENTION); //选的关卡路径
-    if(!in.is_open()) return 0;
+    if (!in.is_open()) { return 0; }
     //读地图//
     string line;
-    while(getline(in, line)) {
-        if(!line.empty() && line[line.size()-1]==13) line.erase(line.size()-1); //去\r
-        if( line.empty()) break; //空行
+    while (getline(in, line)) {
+        if (!line.empty() && line[line.size()-1]==13) { line.erase(line.size()-1); } //去\r
+        if ( line.empty()) { break; } //空行
         MAP.push_back(line);
         map_W = map_W < line.size()? line.size() : map_W;
     }
@@ -470,8 +593,8 @@ bool load_level () { //---------------------------------读关卡文件
     px =py =-1;
     ON =TARGET =0;
     int BOX=0, PLAYER=0;
-    for(size_t y=0; y<MAP.size(); y++) for(size_t x=0; x<MAP[y].size(); x++) {
-        switch(MAP[y][x]) {
+    for (size_t y=0; y<MAP.size(); y++) for (size_t x=0; x<MAP[y].size(); x++) {
+        switch (MAP[y][x]) {
             case 36: BOX++;                          break; //'$'
             case 64: px=x; py=y; PLAYER++;           break; //'@'
             case 46:                       TARGET++; break; //'.'
@@ -481,7 +604,7 @@ bool load_level () { //---------------------------------读关卡文件
             default: return 0; //非法字符
         }
     }
-    if(MAP.empty() || px<0 || TARGET>BOX || !TARGET || PLAYER!=1) return 0;
+    if (MAP.empty() || px<0 || TARGET>BOX || !TARGET || PLAYER!=1) { return 0; }
     return 1;
 }
 
@@ -496,8 +619,8 @@ string base_name (string s) { //------------------------去掉路径,只留文�
 
 int level_num (const string& s) { //--------------------从文件名里抠出关卡号
     int n=0;
-    for(size_t i=0; i<s.size(); i++)
-        if(s[i]>=48 && s[i]<=57) n = n*10 +s[i] -48; //'0' '9'
+    for (size_t i=0; i<s.size(); i++)
+        if (s[i]>=48 && s[i]<=57) { n = n*10 +s[i] -48; } //'0' '9'
     return n;
 }
 
@@ -506,14 +629,14 @@ void find_level () { //---------------------------------扫描关卡文件夹
 
     WIN32_FIND_DATAA data;
     HANDLE HFFF =FindFirstFileA((DIR + NAME + EXTENTION).c_str(), &data); //超级拼装
-    if(HFFF!=INVALID_HANDLE_VALUE) {
+    if (HFFF!=INVALID_HANDLE_VALUE) {
         do { LEVELS.push_back(base_name(data.cFileName)); } //存
-        while(FindNextFileA(HFFF, &data));
+        while (FindNextFileA(HFFF, &data));
         //搜完了//
         FindClose(HFFF);
     }
-    for(size_t i=0; i<LEVELS.size(); i++) for(size_t j=i+1; j<LEVELS.size(); j++)
-            if(level_num(LEVELS[i]) > level_num(LEVELS[j])) swap(LEVELS[i], LEVELS[j]); //排序
+    for (size_t i=0; i<LEVELS.size(); i++) for (size_t j=i+1; j<LEVELS.size(); j++)
+            if (level_num(LEVELS[i]) > level_num(LEVELS[j])) { swap(LEVELS[i], LEVELS[j]); } //排序
 }
 
 //小插件//
@@ -526,7 +649,7 @@ bool is_wide (wchar_t c) { //---------------------------判断字符是否占两
 
 int disp_width (wstring s) { //-------------------------测宽字符串长度
     int w=0;
-    for(wchar_t c : s) {
+    for (wchar_t c : s) {
         //通过获取字符属性累计//
         WORD t=0;
         GetStringTypeW(CT_CTYPE3, &c, 1, &t);
@@ -539,8 +662,8 @@ void put_line (SHORT x, SHORT y, WORD A, wstring s) { //按位置输出一行带
     int w=disp_width(s);
     vector<CHAR_INFO> Buf(w);
     int cx=0; //屏幕列位置
-    for(size_t i=0; i<s.size(); i++) {
-        if(is_wide(s[i]) && cx+1<w) { //宽字符占两格, 两格都要标 LVB
+    for (size_t i=0; i<s.size(); i++) {
+        if (is_wide(s[i]) && cx+1<w) { //宽字符占两格, 两格都要标 LVB
             Buf[cx  ].Char.UnicodeChar = s[i];
             Buf[cx  ].Attributes       = A|COMMON_LVB_LEADING_BYTE ;
             Buf[cx+1].Char.UnicodeChar = L' ';
@@ -576,11 +699,11 @@ void lock_window () { //--------------------------------不让动窗口大小
 
 void set_console_size (SHORT W, SHORT H) { //-----------设窗口和缓冲区大小
     //规范W,H//
-    if(W<min_W) W=min_W;
-    if(H<min_H) H=min_H;
+    if (W<min_W) { W=min_W; }
+    if (H<min_H) { H=min_H; }
     COORD     C_W_max = GetLargestConsoleWindowSize(H_out);
-    if(W> C_W_max.X) W=C_W_max.X;
-    if(H> C_W_max.Y) H=C_W_max.Y;
+    if (W> C_W_max.X) { W=C_W_max.X; }
+    if (H> C_W_max.Y) { H=C_W_max.Y; }
     //放大缓冲区//
     CONSOLE_SCREEN_BUFFER_INFO Buf_info;
     GetConsoleScreenBufferInfo(H_out, &Buf_info);

@@ -38,8 +38,7 @@ bool is_wide (wchar_t c);
 int  disp_width (wstring s);
 void put_line (SHORT x, SHORT y, WORD A, wstring s);
 
-struct things
-{
+struct things {
     string name;
     string lower; //小写
     LL n;
@@ -73,7 +72,7 @@ int main () {
     system("cls");
 
     //读仓库//
-    if(!load()) {
+    if (!load()) {
         set_color( 0,11);
         printf("\n\t我很不幸地告诉你,\n");               then();
         printf("\t仓库打开失败了. \n");                  then();
@@ -89,7 +88,7 @@ int main () {
     main_screen();
 
     //写仓库//
-    if(!save()) {
+    if (!save()) {
         set_color( 0,11);
         printf("\n\t要是你看见这句话了, 说明你很幸运, \n");   then();
         printf("\t因为你保存失败了. \n");                    then();
@@ -108,8 +107,7 @@ int main () {
 //界面//
 
 void main_screen () { //--------------------------------主界面
-    for(;;)
-    {
+    for (;;) {
         BACK: //标签, 又让我学到了
         tmp=stock; //为check准备
         system("cls");
@@ -138,9 +136,9 @@ void main_screen () { //--------------------------------主界面
         put_line(27,16,10,                 L"esc 退出");
 
         int key;
-        for(;;) {
+        for (;;) {
             key=_getch();
-            switch(key) {
+            switch (key) {
             case 49: check_screen(); goto BACK; //'1'
             case 50:    in_screen(); goto BACK; //'2'
             case 51:   out_screen(); goto BACK; //'3'
@@ -188,39 +186,39 @@ void check_screen () { //-------------------------------查看
     put_line(33,22,10,                          L"esc 返回");
     BACK:
     //打印搜索//
-    if(!name.empty()) {
+    if (!name.empty()) {
         gotoxy( 9,19); set_color( 0, 8);
         fputs(("搜索 "+name).c_str(), stdout);
     }
     //页码//
-    if(page==0) page =(tmp.size() +6) /7; //越下界
-    if(tmp.size() < page*7 -6) page =1;   //越上界
+    if (page==0) { page =(tmp.size() +6) /7; } //越下界
+    if (tmp.size() < page*7 -6) { page =1; } //越上界
     gotoxy(23,20); set_color( 0, 7);
     printf("%4zu", page);
     //打印物品//
     id = page*7 > tmp.size()? tmp.size() : page*7; //上界+1
-    for(i=page*7-7; i<id; ++i) {
+    for (i=page*7-7; i<id; ++i) {
         erase_line(i%7 *2 +5); //万一你输了很长的呢
         put_line( 7, i%7*2+5, 7, L"║                                  ║");
         put_line(10, i%7*2+6, 8,    L"数量");
-        
+
         gotoxy(10, i%7 *2 +5); set_color( 0,14);
         fputs(tmp[i].name.c_str(), stdout);
         gotoxy(15, i%7 *2 +6); set_color( 0,11);
         printf("%-27lld", tmp[i].n);
     }
-    for(i=id; i<page*7; ++i) { //没满
+    for (i=id; i<page*7; ++i) { //没满
         erase_line(i%7*2 +5); //万一你输了很长的呢
         put_line( 7, i%7*2+5, 7, L"║                                  ║");
-        put_line( 7, i%7*2+6, 7, L"║                                  ║");//把"数量"去掉
+        put_line( 7, i%7*2+6, 7, L"║                                  ║"); //把"数量"去掉
     }
     //按键//
-    for(;;) {
+    for (;;) {
         key=_getch();
-        switch(key) {
+        switch (key) {
         case 0: case 224: //方向键
             key=_getch();
-            switch(key){
+            switch (key) {
             case 72: case 75: page--; break;
             case 77: case 80: page++; break;
             }
@@ -269,9 +267,10 @@ bool input_screen (string&name, LL&n) { //--------------进出库输入
     show_cursor();
     gotoxy( 3,14); set_color( 0, 7); //改输入时的位置颜色
     getline(cin, name); //不想再开一个
-    if(name.empty()) { hide_cursor(); return 0; }
+
+    if (name.empty()) { hide_cursor(); return 0; }
     n=atoi(name.c_str());
-    if(n<=0) { //非正数
+    if (n<=0) { //非正数
         put_line( 8,15,12, L"不是, 你输的啥? 重来!");
         gotoxy( 0,16); set_color( 0, 7);
         then();
@@ -285,9 +284,10 @@ bool input_screen (string&name, LL&n) { //--------------进出库输入
     //输入名字//
     gotoxy( 3,14); set_color( 0, 7); //同上
     getline(cin, name);
-    if(name.empty()) { hide_cursor(); goto BACK; }
-    for(size_t i =name.size(); i--;) //改成'_'
-        if(isspace(name[i])) name[i]='_'; //所有cin会停的都改
+
+    if (name.empty()) { hide_cursor(); goto BACK; }
+    for (size_t i =name.size(); i--;) //改成'_'
+        if (isspace(name[i])) { name[i]='_'; } //所有cin会停的都改
 
     hide_cursor();
     return 1;
@@ -318,10 +318,10 @@ bool confirm_screen (const string&name, const LL&n) { //确认进出库
 
     FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE)); //清空输入缓冲'\n'
     int key;
-    for(;;) {
+    for (;;) {
         key=_getch();
-        if(key==27) return 0;
-        if(key==13) break;
+        if (key==27) { return 0; }
+        if (key==13) { break; }
     }
     return 1;
 }
@@ -333,10 +333,11 @@ void in_screen () { //----------------------------------入库
     put_line( 6,10,10, L"=====================================");
     set_color( 0, 7); gotoxy( 6,11);
     then();
+
     string name; LL n;
-    for(;;) {
-        if(! input_screen(name, n)) return; //空输入退出
-        if(confirm_screen(name, n)) break ; //确认了继续
+    for (;;) {
+        if (! input_screen(name, n)) { return; }  //空输入退出
+        if (confirm_screen(name, n)) { break ; }  //确认了继续
     }
 
     update(name, n);
@@ -357,14 +358,15 @@ void out_screen () { //---------------------------------出库
     put_line( 6,11,12, L"若你出库的数量大于库存, 将自动全部出库");
     set_color( 0, 7); gotoxy( 6,12);
     then();
+
     string name; LL n;
-    for(;;) {
-        if(! input_screen(name, n)) return; //空输入退出
-        if(confirm_screen(name, n)) break ; //确认了继续
+    for (;;) {
+        if (! input_screen(name, n)) { return; }  //空输入退出
+        if (confirm_screen(name, n)) { break ; }  //确认了继续
     }
     //判断仓库有没有//
     vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
-    if(it==stock.end()) {
+    if (it==stock.end()) {
         put_line(15,17,12, L"东西都没有你出个蛋"); //接着确认界面
         gotoxy( 0,18); set_color( 0, 7);
         then();
@@ -396,14 +398,14 @@ void reset_screen () { //-------------------------------重置
     put_line(20, 7,12,                 L"enter");
 
     int key;
-    for(;;) {
+    for (;;) {
         key=_getch();
-        if(key==13) break; //enter
-        if(key==27) return; //esc
+        if (key==13) { break; } //enter
+        if (key==27) { return; } //esc
     }
 
     erase_line(7);
-    if(CopyFileA((STOCK+".copy").c_str(), STOCK.c_str(), false)) {
+    if (CopyFileA((STOCK+".copy").c_str(), STOCK.c_str(), false)) {
         put_line( 0, 7,11, L"  OK啊, 也是完成了. ");
     } else {
         put_line( 0, 7,11, L"  我去, 居然失败了. ");
@@ -418,10 +420,10 @@ void reset_screen () { //-------------------------------重置
 
 bool load () { //---------------------------------------读取库存
     ifstream S(STOCK);
-    if(!S.is_open()) return 0;
+    if (!S.is_open()) { return 0; }
     stock.clear(); //不清等死
     things A;
-    while(S >>A.name >>A.n) {
+    while (S >>A.name >>A.n) {
         A.lower=tolower(A.name);
         stock.push_back(A);
     }
@@ -431,13 +433,13 @@ bool load () { //---------------------------------------读取库存
 
 bool save () { //---------------------------------------保存
     ofstream S(STOCK + ".tmp");
-    if(!S.is_open()) return 0;
-    for(auto i : stock)
+    if (!S.is_open()) { return 0; }
+    for (auto i : stock)
         S <<i.name <<' ' <<i.n <<'\n';
     S.close(); //防止阻碍合并
     error_code ec;
     filesystem::rename(STOCK + ".tmp", STOCK, ec); //合并
-    if(ec) return 0; //有错误信息
+    if (ec) { return 0; } //有错误信息
     return 1;
 }
 
@@ -446,33 +448,33 @@ bool save () { //---------------------------------------保存
 void search (string name) { //--------------------------将搜索到的放入tmp
     tmp.clear(); //不清等死
     name =tolower(name);
-    for(size_t i=0; i<stock.size(); ++i)
-        if(stock[i].lower.find(name) != string::npos)
+    for (size_t i=0; i<stock.size(); ++i)
+        if (stock[i].lower.find(name) != string::npos)
             tmp.push_back(stock[i]);
 }
 
 void update (string name, LL n) { //--------------------更新库存数据(区分大小写)
     vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
     //[&]所有外部引用捕获,[=]值捕获,[&x][=x]只捕获x,[=,&x]默认 值捕获,x引用//本身固定传入const &
-    if(it==stock.end()) {
-        if(n<0) return;
+    if (it==stock.end()) {
+        if (n<0) { return; }
         things a;
-        a.name =name;
-        a.n    =n;
-        a.lower=tolower(name);
+        a.name  = name;
+        a.n     = n;
+        a.lower = tolower(name);
         stock.push_back(a);
         sort(stock.begin(), stock.end(), [](const things&a, const things&b){ return a.lower<b.lower; });
     } else {
-        it->n +=n;
-        if(it->n <=0) stock.erase(it);
+        it->n += n;
+        if (it->n <=0) { stock.erase(it); }
     }
 }
 
 //小插件//
 
 string tolower (string s) { //--------------------------转小写
-    for(size_t i=s.size(); i--;)
-        if(65<=s[i] && s[i]<=90) s[i]+=32;//用ASCLL算
+    for (size_t i=s.size(); i--;)
+        if (65<=s[i] && s[i]<=90) { s[i]+=32; } //用ASCLL算
     return s;
 }
 
@@ -491,7 +493,7 @@ bool is_wide (wchar_t c) { //---------------------------判断字符是否占两
 
 int disp_width (wstring s) { //-------------------------测宽字符串长度
     int w=0;
-    for(wchar_t c : s) {
+    for (wchar_t c : s) {
         //通过获取字符属性累计//
         WORD t=0;
         GetStringTypeW(CT_CTYPE3, &c, 1, &t);
@@ -504,8 +506,8 @@ void put_line (SHORT x, SHORT y, WORD A, wstring s) { //按位置输出一行带
     int w=disp_width(s);
     vector<CHAR_INFO> Buf(w);
     int cx=0; //屏幕列位置
-    for(size_t i=0; i<s.size(); i++) {
-        if(is_wide(s[i]) && cx+1<w) { //宽字符占两格, 两格都要标 LVB
+    for (size_t i=0; i<s.size(); i++) {
+        if (is_wide(s[i]) && cx+1<w) { //宽字符占两格, 两格都要标 LVB
             Buf[cx  ].Char.UnicodeChar = s[i];
             Buf[cx  ].Attributes       = A|COMMON_LVB_LEADING_BYTE ;
             Buf[cx+1].Char.UnicodeChar = L' ';
@@ -541,11 +543,11 @@ void lock_window () { //--------------------------------不让动窗口大小
 
 void set_console_size (SHORT W, SHORT H) { //-----------设窗口和缓冲区大小
     //规范W,H//
-    if(W<min_W) W=min_W;
-    if(H<min_H) H=min_H;
+    if (W<min_W) { W=min_W; }
+    if (H<min_H) { H=min_H; }
     COORD     C_W_max = GetLargestConsoleWindowSize(H_out);
-    if(W> C_W_max.X) W=C_W_max.X;
-    if(H> C_W_max.Y) H=C_W_max.Y;
+    if (W> C_W_max.X) { W=C_W_max.X; }
+    if (H> C_W_max.Y) { H=C_W_max.Y; }
     //放大缓冲区//
     GetConsoleScreenBufferInfo(H_out, &Buf_info);
     COORD    Buf_size = { Buf_info.dwSize.X <W ? W : Buf_info.dwSize.X,
