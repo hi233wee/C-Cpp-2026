@@ -7,8 +7,8 @@ using namespace std;
 
 random_device RD;
 mt19937 RNG(RD());
-uniform_int_distribution<int> RAND(0, 11); //2,3,4的公倍数12
-uniform_int_distribution<int> RAND_COLOR(1, 15); //1-15随机颜色,避开黑色
+uniform_int_distribution<int> RAND(0, 11); // 2,3,4的公倍数12
+uniform_int_distribution<int> RAND_COLOR(1, 15); // 1-15随机颜色,避开黑色
 inline int Rand ();
 inline int Rand_color ();
 inline int Rand (int l, int r);
@@ -58,8 +58,8 @@ void start ();
 void run_game ();
 
 int main () {
-    //初始化//
-    SetConsoleOutputCP(65001); //UTF-8, 保证中文不乱码
+    // 初始化 //
+    SetConsoleOutputCP(65001); // UTF-8, 保证中文不乱码
     SetConsoleCP(65001);
     set_console_font();
     set_console_size(0, 0);
@@ -71,53 +71,53 @@ int main () {
 
     set_color( 0, 7);
     return 0;
-} //随机迷宫+一堆功能
+} // 随机迷宫+一堆功能
 
-//游戏//
+// 游戏 //
 
 void start () { //--------------------------------------开始
     system("cls");
-    //初始化//
+    // 初始化 //
     set_console_size(maze_W, maze_H+2);
     get_console_size(C_col, C_row);
-    //计算偏移//
+    // 计算偏移 //
     OX = (C_col -maze_W) /2   ;
     OY = (C_row -maze_H) /2 -1;
-    //迷宫, 开!//
+    // 迷宫, 开! //
     generate_maze();
     draw_maze();
-    //底部导航//
+    // 底部导航 //
     gotoxy((C_col-45)/2, C_row-2);
     set_color(BG_A, wall_A);
-    printf("↑↓←→ w/s/a/d 移动 | esc 退出 | S 入口  E 出口 "); //45
+    printf("↑↓←→ w/s/a/d 移动 | esc 退出 | S 入口  E 出口 "); // 45
 
-    run_game(); //结束放在里面
+    run_game(); // 结束放在里面
 
     set_console_size(0, 0);
 }
 
 void run_game () { //-----------------------------------运行游戏
-    //玩家放到入口//
+    // 玩家放到入口 //
     int px=2, py=1;
     gotoxy(px+OX, py+OY); set_color(BG_A, player_A);
     putchar(player);
-    //开始计时//
+    // 开始计时 //
     LARGE_INTEGER frequency, start, end;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
-    //辅助//
+    // 辅助 //
     int key, dx, dy, nx, ny;
-    //运动和打印//
+    // 运动和打印 //
     for (;;) {
         key=_getch();
         if (key==27) { return; }
-        //方向//
+        // 方向 //
         dx=0, dy=0;
         switch (key) {
-        case 119: case 87: dy=-1; break; //'w' 'W'
-        case 115: case 83: dy= 1; break; //'s' 'S'
-        case  97: case 65: dx=-1; break; //'a' 'A'
-        case 100: case 68: dx= 1; break; //'d' 'D'
+        case 119: case 87: dy=-1; break; // 'w' 'W'
+        case 115: case 83: dy= 1; break; // 's' 'S'
+        case  97: case 65: dx=-1; break; // 'a' 'A'
+        case 100: case 68: dx= 1; break; // 'd' 'D'
         case 0: case 224:
             key=_getch();
             switch (key) {
@@ -128,80 +128,80 @@ void run_game () { //-----------------------------------运行游戏
             }
         }
         if (dx==0 && dy==0) { continue; }
-        //前方//
+        // 前方 //
         nx = px+dx;
         ny = py+dy;
-        if (nx<0 || ny<0 || nx>=maze_W || ny>=maze_H) { continue; } //出界
-        if (maze[ny][nx]==35) { continue; } //撞墙 //'#'
-        //打印原处//
+        if (nx<0 || ny<0 || nx>=maze_W || ny>=maze_H) { continue; } // 出界
+        if (maze[ny][nx]==35) { continue; } // 撞墙 //'#'
+        // 打印原处 //
         gotoxy(px+OX, py+OY);
         switch (maze[py][px]) {
-        case 83: set_color(BG_A,     10); putchar(83);        break; //'S'
-        case 55: set_color(BG_A, wall_A); fputs("▒", stdout); break; //'7'
-        case 32: set_color(BG_A,   BG_A); putchar(32);        break; //' '
+        case 83: set_color(BG_A,     10); putchar(83);        break; // 'S'
+        case 55: set_color(BG_A, wall_A); fputs("▒", stdout); break; // '7'
+        case 32: set_color(BG_A,   BG_A); putchar(32);        break; // ' '
         }
-        //打印玩家//
+        // 打印玩家 //
         px =nx;
         py =ny;
         gotoxy(px+OX, py+OY); set_color(BG_A, player_A);
         putchar(player);
-        //到终点//
-        if (maze[py][px]==69) { //'E'
-            QueryPerformanceCounter(&end); //结束计时
+        // 到终点 //
+        if (maze[py][px]==69) { // 'E'
+            QueryPerformanceCounter(&end); // 结束计时
             MS =(double)(end.QuadPart - start.QuadPart) /frequency.QuadPart *1000;
 
-            set_color( 0, 7); //防止背景色
-            set_console_size(0, 0); //复原
+            set_color( 0, 7); // 防止背景色
+            set_console_size(0, 0); // 复原
             end_screen();
             return;
         }
     }
 }
 
-//迷宫//
+// 迷宫 //
 
 void generate_maze () { //------------------------------生成迷宫
-    //算大小//
+    // 算大小 //
     int room_col =(maze_W -3) /2;
-    int room_row =(maze_H -3) /2; //房间行列数
+    int room_row =(maze_H -3) /2; // 房间行列数
           maze_W = 2*room_col +3;
-          maze_H = 2*room_row +3; //网格比(2n+1)再多一圈
+          maze_H = 2*room_row +3; // 网格比(2n+1)再多一圈
     
     maze.clear();
     maze.assign(maze_H, string(maze_W, '#'));
 
-    //搜索状态//
+    // 搜索状态 //
     vector< vector<bool> > vis(room_row, vector<bool>(room_col, 0));
-    vis[0][0]=1; //vis==1: 房间在队列
-    stack< pair<int, int> > st; //记录房间坐标
+    vis[0][0]=1; // vis==1: 房间在队列
+    stack< pair<int, int> > st; // 记录房间坐标
     st.push(make_pair(0, 0));
-    //辅助//
+    // 辅助 //
     int R, C, NR, NC, n, cand[4], d;
     const int DR[4] ={-1, 1, 0, 0};
-    const int DC[4] ={ 0, 0,-1, 1}; //偏移
+    const int DC[4] ={ 0, 0,-1, 1}; // 偏移
 
     maze[2][2]=' ';
-    //DFS 回溯法, 保证全联通 (还是这个好看)
+    // DFS 回溯法, 保证全联通 (还是这个好看)
     while (!st.empty()) {
         R =st.top().first;
         C =st.top().second;
         n=0;
         for (size_t i=0; i<4; i++) {
-            //四个方向搜//
+            // 四个方向搜 //
             NR = R+DR[i];
             NC = C+DC[i];
             if (NR>=0 && NR<room_row && NC>=0 && NC<room_col && !vis[NR][NC])
-                cand[n++]=i; //存候选挖墙方向
+                cand[n++]=i; // 存候选挖墙方向
         }
         if (n==0) { st.pop(); continue; }
 
-        d  = cand[Rand()%n]; //随机选一个方向
+        d  = cand[Rand()%n]; // 随机选一个方向
         NR = R+DR[d];
         NC = C+DC[d];
         maze[2*R +2 +DR[d]][2*C +2 +DC[d]]=' ';
-        maze[2*NR +2][2*NC +2]=' '; //挖墙(注意坐标换算)
+        maze[2*NR +2][2*NC +2]=' '; // 挖墙(注意坐标换算)
         vis[NR][NC]=1;
-        st.push(make_pair(NR, NC)); //新房间
+        st.push(make_pair(NR, NC)); // 新房间
     }
     /*  Wilson 均匀随机 生成树
     先确定树根(起点或终点)
@@ -283,12 +283,12 @@ void generate_maze () { //------------------------------生成迷宫
         maze[y<<1][x<<1]=' '; //把房间挖了
     }*/
 
-    //神秘捷径//
+    // 神秘捷径 //
     for (int x=0; x<maze_W; x++) { maze[0][x]='7'; maze[maze_H-1][x] ='7'; }
     for (int y=0; y<maze_H; y++) { maze[y][0]='7'; maze[y][maze_W-1] ='7'; }
 
-    maze[1][2]              ='S'; //入口
-    maze[maze_H-2][maze_W-3]='E'; //出口
+    maze[1][2]              ='S'; // 入口
+    maze[maze_H-2][maze_W-3]='E'; // 出口
 }
 
 void draw_maze () { //----------------------------------绘制迷宫
@@ -296,25 +296,25 @@ void draw_maze () { //----------------------------------绘制迷宫
         gotoxy(0+OX, y+OY);
         for (int x=0; x<maze_W; x++)
             switch (maze[y][x]) {
-            case 35: set_color(BG_A, wall_A); fputs("█", stdout); break; //'#'
-            case 55: set_color(BG_A, wall_A); fputs("▒", stdout); break; //'7'
-            case 32: set_color(BG_A,   BG_A); putchar(32);        break; //' '
-            case 83: set_color(BG_A,     10); putchar(83);        break; //'S'
-            case 69: set_color(BG_A,     12); putchar(69);        break; //'E'
+            case 35: set_color(BG_A, wall_A); fputs("█", stdout); break; // '#'
+            case 55: set_color(BG_A, wall_A); fputs("▒", stdout); break; // '7'
+            case 32: set_color(BG_A,   BG_A); putchar(32);        break; // ' '
+            case 83: set_color(BG_A,     10); putchar(83);        break; // 'S'
+            case 69: set_color(BG_A,     12); putchar(69);        break; // 'E'
             }
     }
 }
 
-//设置//
+// 设置 //
 
 void pick_symbol () { //--------------------------------选角
     system("cls");
     put_line( 2, 1, 7,  L"请输入一个常见字符作为玩家符号 (回车默认'7'):");
     string s;
     for (;;) {
-        gotoxy( 0, 3); set_color( 0, 7); //改输入时的位置颜色
+        gotoxy( 0, 3); set_color( 0, 7); // 改输入时的位置颜色
         getline(cin, s);
-        //判断//
+        // 判断 //
         if ( s.empty() ) { player ='7' ; return; }
         if (s.size()==1) { player =s[0]; return; }
         put_line( 2, 5, 7,  L"你...我...叫你输");
@@ -342,11 +342,11 @@ void pick_color (int&A, const string& T, int Def) { //--选颜色
     string s;
     for (;;) {
         put_line( 0, 8, 7, L"请输入编号: ");
-        gotoxy(12, 8); set_color( 0, 7); //改输入时的位置颜色
+        gotoxy(12, 8); set_color( 0, 7); // 改输入时的位置颜色
         getline(cin, s);
-        //判断//
+        // 判断 //
         if ( s.empty() )   { A =Def; return; }
-        int n=atoi(s.c_str()); //转换成数字
+        int n=atoi(s.c_str()); // 转换成数字
         if (n>=0 && n<=15) { A = n ; return; }
         put_line( 2,10, 7,  L"你瞎吗? ");
         put_line(10,10,12,          L"0-15");
@@ -362,7 +362,7 @@ void set_maze_size () { //------------------------------设置迷宫大小
     put_line( 2, 1, 7,   L"请调整你的窗口大小以决定迷宫大小");
     put_line( 0, 2, 8, L"按'enter'结束调整");
     for (;;) if (_getch()==13) { break; }
-    //读取调整//
+    // 读取调整 //
     lock_window();
     get_console_size(maze_W, maze_H);
     if (maze_W<3 || maze_H<3) {
@@ -374,13 +374,13 @@ void set_maze_size () { //------------------------------设置迷宫大小
     }
     COORD C_W_max = GetLargestConsoleWindowSize(H_out);
     if (maze_H+1 > C_W_max.Y) {
-        maze_H = C_W_max.Y-2; //偷偷改小
+        maze_H = C_W_max.Y-2; // 偷偷改小
     }
-    //复原//
+    // 复原 //
     set_console_size(0, 0);
 }
 
-//界面//
+// 界面 //
 
 void main_screen () { //--------------------------------主界面
     for (;;) {
@@ -409,8 +409,8 @@ void main_screen () { //--------------------------------主界面
             key=_getch();
             switch (key) {
             case 27: return;
-            case 49:      start(); goto BACK; //'1'
-            case 50: set_screen(); goto BACK; //'2'
+            case 49:      start(); goto BACK; // '1'
+            case 50: set_screen(); goto BACK; // '2'
             }
         }
     }
@@ -452,11 +452,11 @@ void set_screen () { //---------------------------------设置界面
             key=_getch();
             switch (key) {
             case 27: return;
-            case 49: pick_symbol();                         goto BACK; //'1'
-            case 50: pick_color(player_A, "角色的颜色",10); goto BACK; //'2'
-            case 51: pick_color(  wall_A, "墙壁的颜色", 7); goto BACK; //'3'
-            case 52: pick_color(    BG_A, "背景的颜色", 0); goto BACK; //'4'
-            case 53: set_maze_size();                       goto BACK; //'5'
+            case 49: pick_symbol();                         goto BACK; // '1'
+            case 50: pick_color(player_A, "角色的颜色",10); goto BACK; // '2'
+            case 51: pick_color(  wall_A, "墙壁的颜色", 7); goto BACK; // '3'
+            case 52: pick_color(    BG_A, "背景的颜色", 0); goto BACK; // '4'
+            case 53: set_maze_size();                       goto BACK; // '5'
             }
         }
     }
@@ -464,7 +464,7 @@ void set_screen () { //---------------------------------设置界面
 
 void end_screen () { //---------------------------------通关画面
     system("cls");
-    //计算时间//
+    // 计算时间 //
     int    m = MS/60000;
     double s = (MS - m*60000) /1000.0;
 
@@ -480,7 +480,7 @@ void end_screen () { //---------------------------------通关画面
     if (m>0) { printf("%d 分 %.3lf 秒\n", m, s); }
     else    printf(      "%.3lf 秒\n",    s);
     put_line( 1, 9, 7, L"按'esc'退出");
-    //闪烁+退出//
+    // 闪烁+退出 //
     for (;;) {
         put_line(17, 6, Rand_color(), L"Y O U   W I N ! !");
         Sleep(100);
@@ -488,7 +488,7 @@ void end_screen () { //---------------------------------通关画面
     }
 }
 
-//小插件//
+// 小插件 //
 
 bool is_wide (wchar_t c) { //---------------------------判断字符是否占两格
     WORD t=0;
@@ -499,7 +499,7 @@ bool is_wide (wchar_t c) { //---------------------------判断字符是否占两
 int disp_width (wstring s) { //-------------------------测宽字符串长度
     int w=0;
     for (wchar_t c : s) {
-        //通过获取字符属性累计//
+        // 通过获取字符属性累计 //
         WORD t=0;
         GetStringTypeW(CT_CTYPE3, &c, 1, &t);
         w += (t & (C3_FULLWIDTH|C3_IDEOGRAPH)) ? 2 : 1;
@@ -507,12 +507,12 @@ int disp_width (wstring s) { //-------------------------测宽字符串长度
     return w;
 }
 
-void put_line (SHORT x, SHORT y, WORD A, wstring s) { //按位置输出一行带颜色字符串
+void put_line (SHORT x, SHORT y, WORD A, wstring s) { // 按位置输出一行带颜色字符串
     int w=disp_width(s);
     vector<CHAR_INFO> Buf(w);
-    int cx=0; //屏幕列位置
+    int cx=0; // 屏幕列位置
     for (size_t i=0; i<s.size(); i++) {
-        if (is_wide(s[i]) && cx+1<w) { //宽字符占两格, 两格都要标 LVB
+        if (is_wide(s[i]) && cx+1<w) { // 宽字符占两格, 两格都要标 LVB
             Buf[cx  ].Char.UnicodeChar = s[i];
             Buf[cx  ].Attributes       = A|COMMON_LVB_LEADING_BYTE ;
             Buf[cx+1].Char.UnicodeChar = L' ';
@@ -530,7 +530,7 @@ void put_line (SHORT x, SHORT y, WORD A, wstring s) { //按位置输出一行带
     WriteConsoleOutputW(H_out, Buf.data(), size, Buf_Org, &region);
 }
 
-//控制台工具//
+// 控制台工具 //
 
 void set_console_font () { //---------------------------改字体
     CONSOLE_FONT_INFOEX C_font = {};
@@ -547,7 +547,7 @@ void lock_window () { //--------------------------------不让动窗口大小
 }
 
 void unlock_window () { //------------------------------解除窗口锁定
-    //放大缓冲区//
+    // 放大缓冲区 //
     SetConsoleScreenBufferSize(H_out, GetLargestConsoleWindowSize(H_out));
 
     HWND     C_W  = GetConsoleWindow();
@@ -562,21 +562,21 @@ void get_console_size (auto& col, auto& row) { //-------获取控制台宽高
 }
 
 void set_console_size (SHORT W, SHORT H) { //-----------设窗口和缓冲区大小
-    //规范W,H//
+    // 规范W,H //
     if (W<min_W) { W=min_W; }
     if (H<min_H) { H=min_H; }
     COORD     C_W_max = GetLargestConsoleWindowSize(H_out);
     if (W> C_W_max.X) { W=C_W_max.X; }
     if (H> C_W_max.Y) { H=C_W_max.Y; }
-    //放大缓冲区//
+    // 放大缓冲区 //
     GetConsoleScreenBufferInfo(H_out, &Buf_info);
     COORD    Buf_size = { Buf_info.dwSize.X <W ? W : Buf_info.dwSize.X,
                           Buf_info.dwSize.Y <H ? H : Buf_info.dwSize.Y };
     SetConsoleScreenBufferSize(H_out, Buf_size);
-    //设窗口大小//
+    // 设窗口大小 //
     SMALL_RECT W_size = { 0, 0, SHORT(W-1), SHORT(H-1) };
-    SetConsoleWindowInfo(H_out, true, &W_size); //放大缓冲区
-    SetConsoleScreenBufferSize(H_out, {W, H}  ); //缩缓冲区到没有滚动条
+    SetConsoleWindowInfo(H_out, true, &W_size); // 放大缓冲区
+    SetConsoleScreenBufferSize(H_out, {W, H}  ); // 缩缓冲区到没有滚动条
 }
 
 void erase_line (SHORT y) { //--------------------------擦除指定行
@@ -600,7 +600,7 @@ void set_color (int BG, int FG) { //--------------------设置颜色, BG背景, 
     SetConsoleTextAttribute(H_out, (BG<<4)|FG);
 }
 
-//随机函数//
+// 随机函数 //
 
 inline int Rand () { //---------------------------------0-11随机数
     return RAND(RNG);
