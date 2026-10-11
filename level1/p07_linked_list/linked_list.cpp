@@ -18,8 +18,8 @@ void erase_line (int y);
 uLL rd ();
 
 struct linked_list {
-    LL V;           //值
-    linked_list* N; //下一项
+    LL V;           // 值
+    linked_list* N; // 下一项
 };
 uLL n; //------------------------节点个数
 LL L, R; //----------------------值域
@@ -32,8 +32,8 @@ void putn (const linked_list* i);
 void find_5 (linked_list*& i, size_t& id);
 
 int main () {
-    //初始化//
-    SetConsoleOutputCP(65001); //UTF-8, 保证中文不乱码
+    // 初始化 //
+    SetConsoleOutputCP(65001); // UTF-8, 保证中文不乱码
     SetConsoleCP(65001);
 
     system("cls");
@@ -46,20 +46,20 @@ int main () {
     printf("   上界: "); R=rd();
     printf("你真棒! 我将会输出随机生成的链表\n");
     printf("  然后把链表反转\n");
-    //随机数//
+    // 随机数 //
     random_device RD;
     mt19937 RNG(RD());
     uniform_int_distribution<LL> RAND(L, R);
-    //我的链表头存值//
+    // 我的链表头存值 //
     linked_list* head=nullptr;
-    //创建, 输出, 翻转//
+    // 创建, 输出, 翻转 //
     for (size_t i=n+1; --i;) { add(head, Rand()); }
     putn(head);
     reverse(head);
-    //找5//
+    // 找5 //
     printf("然后我会尝试找第一个5\n");
     printf("  并返回它的位置\n");
-    linked_list* it=head; //记录找到哪了
+    linked_list* it=head; // 记录找到哪了
     size_t id=1;
     char c;
     for (;;) {
@@ -69,7 +69,7 @@ int main () {
             c=_getch();
             if (c==27) {
                 erase_line(get_cursor_line());
-                Free(head); //释放
+                Free(head); // 释放
                 return 0;
             }
             else if (c==13) break;
@@ -80,7 +80,7 @@ int main () {
     return 0;
 }
 
-//链表//
+// 链表 //
 
 void add (linked_list*& h, LL v) { //-------------------添加(头插)
     linked_list* p=(linked_list*)malloc(sizeof(linked_list));
@@ -90,9 +90,9 @@ void add (linked_list*& h, LL v) { //-------------------添加(头插)
 }
 
 void reverse (linked_list*& h) { //---------------------反转
-    linked_list* i=nullptr; //下一个
-    linked_list* p=nullptr; //上一个
-                         //h//这一个
+    linked_list* i=nullptr; // 下一个
+    linked_list* p=nullptr; // 上一个
+                         // h//这一个
     i = h->N;
     while (i) {
         h->N = p;
@@ -130,7 +130,7 @@ void putn (const linked_list* i) { //-------------------输出整个链表
         while (tt) { s[t++]=tmp[--tt]; }
         s[t++]='\n';
         if (t>7777700) {
-            fwrite(s, 1, t, stdout); //分块
+            fwrite(s, 1, t, stdout); // 分块
             t=0;
         }
         i = i->N;
@@ -152,17 +152,17 @@ void find_5 (linked_list*& i, size_t& id) { //----------找第一个值为5的�
     fputs("-1\n", stdout);
 }
 
-//小插件//
+// 小插件 //
 
 uLL rd () {
     int c=getchar(); uLL x=0;
     while (c!=EOF && !isdigit(c)) { c=getchar(); }
-    if (c==EOF) { return 0; } //ai说有神秘原因会输入这个
+    if (c==EOF) { return 0; } // ai说有神秘原因会输入这个
     while (isdigit(c))
     { x = x*10 +c -48; c=getchar(); }
     return x;
 }
-//控制台//
+// 控制台 //
 
 void gotoxy (SHORT x, SHORT y) { //---------------------移动光标
     COORD a={x, y};
@@ -184,5 +184,5 @@ int get_console_width () { //---------------------------获取控制台宽度
 void erase_line (int y) { //----------------------------擦除指定行
     COORD a; DWORD b;
     a.X=0; a.Y=y;
-    FillConsoleOutputCharacter(handle_output, 32, get_console_width(), a, &b); //' '
+    FillConsoleOutputCharacter(handle_output, 32, get_console_width(), a, &b); // ' '
 }
