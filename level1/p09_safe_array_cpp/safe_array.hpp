@@ -171,7 +171,11 @@ public:
         buf_ = std::move(other.buf_);
         other.buf_ = nullptr;
     }
-    // 还要写 initializer_list 构造
+    my_vector(std::initializer_list<T> il) : cap_(il.size()) { // {} 构造
+        if (!cap_) return;
+        buf_ = new T[cap_];
+        for (const T& x : il) { buf_[n_++] = x; } // 这个语法真是太好用了
+    }
 
     // 清空 //
     ~my_vector() noexcept { delete[] buf_; buf_ = nullptr; }
@@ -230,16 +234,24 @@ public:
         for (size_t i=n_-1; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
         buf_[pos] = std::move(val);
     }
-    void in(const long long& left, const long long& right, const T& val) { // 反正拷贝这么多次就不写移动了
-        if (left<0 || right>=n_) throw my_out_of_range("往哪插呢? ", n_);
-        if (right < left) return; // 我觉得还是静默好
-        const size_t place = right - left +1;
-        n_ += place;
-        if (n_ > cap_) { grow(); } // 插入的大小不超过原大小
-        for (size_t i=n_-1; i>right; --i) { buf_[i] = std::move(buf_[i - place]); }
-        for (size_t i=left; i<=right; ++i) { buf_[i] = val ; }
+    void in(const long long& pos, const long long& count, const T& val) { // 反正拷贝这么多次就不写移动了
+        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
+        if (count<=0) return; // 我觉得还是静默好
+        n_ += count;
+        if (n_ > cap_) { move(n_); }
+        for (size_t i=n_; i>pos; --i) { buf_[i] = std::move(buf_[i-1 - count]); } // 三处因为size_t在pos=0时下溢用i-1
+        for (size_t i = pos + count; i>pos; --i) { buf_[i-1] = val ; }
     }
-    // 还要写插入一个数组区间
+    template<class It, class = std::enable_if_t< !std::is_integral_v<It> > > // 防止整形匹配进来
+    void in (const long long& pos, It begin, It end) { // end是末尾+1
+        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
+        if (end <= begin) return;
+        const size_t place = end - begin;
+        n_ += place;
+        if (n_ > cap_) { move(n_); }
+        for (size_t i=n_; i>pos; --i) { buf_[i-1] = std::move(buf_[i-1 - place]); }
+        for (It i = begin; i<end; ++i) { buf_[i - begin + pos] = *i ; }
+    }
 
     // 清除 //
     void out() { // 末尾
@@ -292,7 +304,7 @@ public:
 
     // 判等 //
     friend bool operator == (const my_vector& a, const my_vector& b) noexcept {
-        if (a.n_ == b.n_) return 0;
+        if (a.n_ != b.n_) return 0;
         for (size_t i=0; i<a.n_; ++i) { if(a[i] != b[i]) return 0; }
         return 1;
     }
@@ -300,6 +312,7 @@ public:
 
     // 下标,大小传入都不能用unsigned
     // 一堆无符号比较已经拦了 <0 的情况, 但是没转类型
+    // 很多标准函数用这些就能带替, 只是麻烦点
     // 定义时实例化天然挡不同类型操作
     // out内存释放晚
 };
@@ -336,6 +349,8 @@ template<class T> 创建模版, 使用 <> 或 变量 告诉编译器类型, 并�
     typename 告诉编译器后面是类型名
     模版变量初始化写 T{}
 
+template<class T> my_any(std::initializer_list<T>) = delete: "= delete" 删掉
+
 ..., 具体三类用法(模版参数包, 函数参数包, 包展开)见L52-53
     写(A,B), 依次传入, 跟在函数后面依次使用函数
 
@@ -357,6 +372,9 @@ friend 定义为非成员函数, 可以直接在外面使用
 decay_t<T> 返回不带(const/volatile/引用/数组)的类型
 
 is_same_v<A,B> 比较类型
+
+SFINAE (Substitution Failure Is Not An Error) 替换失败不是错误.  用于模版类型替换
+    template<class It, class = std::enable_if_t< !std::is_integral_v<It> > >
 
 typeid() 得到不带(const/volatile/引用/数组)的类型信息
 
