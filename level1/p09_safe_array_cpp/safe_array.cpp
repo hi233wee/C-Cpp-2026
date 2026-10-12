@@ -58,6 +58,7 @@ private:
     template<class T, class... A> Base* make(A&&... a) {
         return new Holder<T>(std::forward<A>(a)...); // 造一个Base*
     }
+    
 public:
     // 构造 //
     my_any(                   ) noexcept = default;                                    // 空
@@ -157,9 +158,10 @@ private:
         cap_ = size;
     }
     void grow() { move(cap_? cap_<<1 : 7); }
+
 public:
     // 构造 //
-    my_vector(           ) noexcept = default;
+    my_vector(                      ) noexcept = default;
     my_vector(const my_vector& other)          : n_(other.n_), cap_(other.cap_) { // 拷贝
         if(!other.cap_) return;
         buf_ = new T[other.cap_];
@@ -288,10 +290,12 @@ public:
     }
 
     // 下标,大小传入都不能用unsigned
-    // 一堆无符号比较已经拦了 <0 但是没转
+    // 一堆无符号比较已经拦了 <0 的情况, 但是没转类型
     // 定义时实例化天然挡不同类型操作
     // out内存释放晚
 };
+// 把my_vector套在my_any外面就是safe_array了
+
 
 /*  深度学习
 构造, 析构, 继承 等的写法自己看
