@@ -28,7 +28,7 @@ class my_out_of_range : public my_error { // 下标越界
 public:
     explicit my_out_of_range(const std::string& words, const size_t& size)
         : my_error(words + "我的大小: " + std::to_string(size)) {}
-}; // 初始化写 正确的类型名
+}; // 初始化写 正确的大小
 
 // my_any //
 class my_any {
@@ -66,7 +66,7 @@ public:
     my_any(                   ) noexcept = default;                                    // 空
     my_any(const my_any& other)          : p_(other.p_? other.p_->clone() : nullptr) {}// 拷贝
     my_any(     my_any&& other) noexcept : p_(other.p_) { other.p_ = nullptr; }        // 移动
-    template<class T> my_any(T val) : p_(make<std::decay_t<T> >(std::move(val))) {};// T自动匹配左右值(不能多参)
+    template<class T> my_any(T val) : p_(make<std::decay_t<T> >(std::move(val))) {}; // T自动匹配左右值(不能多参)
     template<class T> my_any(std::initializer_list<T>) = delete; // 防止传入多参时隐式转换到这个, 可能出事
 
     // 清空 //
@@ -81,27 +81,27 @@ public:
 
     // 类型 //
     const std::type_info& type() const {
-        if(p_ == nullptr) throw my_bad_cast("这是空的! ", "没有类型");
+        if(p_ == nullptr) { throw my_bad_cast("这是空的! ", "没有类型"); }
         return p_->type();
     }
 
     // 取值 //
     template<class T> friend const T& cast(const my_any& any) {
-        if (typeid(T) != any.type()) throw my_bad_cast("我的类型: ", any.type().name()); // type里判空了
+        if (typeid(T) != any.type()) { throw my_bad_cast("我的类型: ", any.type().name()); } // type()里判空了
         return *static_cast<const T*>(any.p_->addr());
     }
     template<class T> friend       T& cast (     my_any& any) {
-        return const_cast<T&>(cast<T>(static_cast<const my_any&>(any)));
+        return const_cast<T&>( cast<T>( static_cast<const my_any&>(any) ) );
     }
 
     template<class T> friend const T* cast(const my_any* any) {
-        if (!any    ) return nullptr;
-        if (!any->p_) return nullptr;
-        if (typeid(T) != any->p_->type()) return nullptr;
+        if (!any    ) { return nullptr; }
+        if (!any->p_) { return nullptr; }
+        if (typeid(T) != any->p_->type()) { return nullptr; }
         return static_cast<const T*>(any->p_->addr());
     }
     template<class T> friend       T* cast(      my_any* any) {
-        return const_cast<T*>(cast<T>(static_cast<const my_any*>(any)));
+        return const_cast<T*>( cast<T>( static_cast<const my_any*>(any) ) );
     }
 
     // 赋值 //
@@ -133,7 +133,7 @@ public:
 
     // 判等 //
     friend bool operator == (const my_any& a, const my_any& b) {
-        if (a.p_ == b.p_) return 1;
+        if (a.p_ == b.p_) { return 1; }
         if (a.has_value() && b.has_value()) { return a.type() == b.type(); }
         return 0;
     }
@@ -166,7 +166,7 @@ public:
     // 构造 //
     my_vector(                      ) noexcept = default;
     my_vector(const my_vector& other)          : n_(other.n_), cap_(other.cap_) { // 拷贝
-        if(!other.cap_) return;
+        if(!other.cap_) { return; }
         buf_ = new T[other.cap_];
         for (size_t i=0; i<n_; ++i) { buf_[i] = other.buf_[i]; }
     }
@@ -175,7 +175,7 @@ public:
         other.buf_ = nullptr;
     }
     my_vector(std::initializer_list<T> il) : cap_(il.size()) { // {} 构造
-        if (!cap_) return;
+        if (!cap_) { return; }
         buf_ = new T[cap_];
         for (const T& x : il) { buf_[n_++] = x; } // 这个语法真是太好用了
     }
@@ -202,7 +202,7 @@ public:
     size_t size() const noexcept { return n_; }
     void resize(const long long& size) { resize(size, T{}); }
     void resize(const long long& size, const T& val) {
-        if (size<0) throw my_error("改大小也不能为负啊");
+        if (size<0) { throw my_error("改大小也不能为负啊"); }
         new_move(size); // 标准不改cap_
         while (n_<size) { buf_[n_++] = val; }
         n_ = size;
@@ -210,7 +210,7 @@ public:
 
     size_t capacity() const noexcept { return cap_; }
     void reserve(const long long& size) {
-        if (size<0) throw my_error("改大小也不能为负啊");
+        if (size<0) { throw my_error("改大小也不能为负啊"); }
         if (size > cap_) { new_move(size); }
         if (size < n_  ) { new_move(n_  ); } // 标准 <n_ 不干
     }
@@ -226,20 +226,20 @@ public:
         buf_[n_++] = std::move(val);
     }
     void in(const long long& pos, const T& val) {
-        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
+        if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
         if (++n_ > cap_) { grow(); }
         for (size_t i=n_; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
         buf_[pos] = val;
     }
     void in(const long long& pos,      T&& val) {
-        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_); // =n 不越界
+        if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); } // =n 不越界
         if (++n_ > cap_) { grow(); }
         for (size_t i=n_-1; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
         buf_[pos] = std::move(val);
     }
     void in(const long long& pos, const long long& count, const T& val) { // 反正拷贝这么多次就不写移动了
-        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
-        if (count<=0) return; // 我觉得还是静默好
+        if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
+        if (count<=0) { return; } // 我觉得还是静默好
         n_ += count;
         if (n_ > cap_) { new_move(n_); }
         for (size_t i=n_-1; i >= pos+count; --i) { buf_[i] = std::move(buf_[i - count]); } // pos+count >0
@@ -247,8 +247,8 @@ public:
     }
     template<class It, class = std::enable_if_t< !std::is_integral_v<It> > > // 防止整形匹配进来
     void in (const long long& pos, It begin, It end) { // end是末尾+1
-        if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
-        if (end <= begin) return; // 我觉得还是静默好
+        if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
+        if (end <= begin) { return; } // 我觉得还是静默好
         const size_t place = end - begin;
         n_ += place;
         if (n_ > cap_) { new_move(n_); }
@@ -258,18 +258,18 @@ public:
 
     // 清除 //
     void out() { // 末尾
-        if (!n_) throw my_error("空的你还删");
+        if (!n_) { throw my_error("空的你还删"); }
         buf_[--n_] = T{};
     }
     void out(const long long& pos) { // 位置
-        if (pos<0 || pos>=n_) throw my_out_of_range("想删哪呢? ", n_);
+        if (pos<0 || pos>=n_) { throw my_out_of_range("想删哪呢? ", n_); }
         --n_;
         for (size_t i=pos; i<n_; ++i) { buf_[i] = std::move(buf_[i+1]); }
         buf_[n_] = T{};
     }
     void out(const long long& left, const long long& right) { // 区间
-        if (left<0 || right>=n_) throw my_out_of_range("想删哪呢? ", n_);
-        if (right < left) return; // 我觉得还是静默好
+        if (left<0 || right>=n_) { throw my_out_of_range("想删哪呢? ", n_); }
+        if (right < left) { return; } // 我觉得还是静默好
         const size_t empty = right - left +1;
         n_ -= empty;
         for (size_t i=left; i<n_; ++i) { buf_[i] = std::move(buf_[i + empty]); }
@@ -284,11 +284,11 @@ public:
 
     // 下标 //
     T& operator [] (const long long& pos) { // 不写at()了
-        if (pos<0 || pos>=n_) throw my_out_of_range("下标越界 ", n_);
+        if (pos<0 || pos>=n_) { throw my_out_of_range("下标越界 ", n_); }
         return buf_[pos];
     }
     const T& operator [] (const long long& pos) const {
-        if (pos<0 || pos>=n_) throw my_out_of_range("下标越界 ", n_);
+        if (pos<0 || pos>=n_) { throw my_out_of_range("下标越界 ", n_); }
         return buf_[pos];
     }
 
@@ -307,7 +307,7 @@ public:
 
     // 判等 //
     friend bool operator == (const my_vector& a, const my_vector& b) {
-        if (a.n_ != b.n_) return 0;
+        if (a.n_ != b.n_) { return 0; }
         for (size_t i=0; i<a.n_; ++i) { if(a[i] != b[i]) return 0; }
         return 1;
     }
