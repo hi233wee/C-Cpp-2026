@@ -320,6 +320,7 @@ public:
     // out内存释放晚
 };
 // 把my_vector套在my_any外面就是safe_array了
+// 虽然但是my_vector本身就是传统safe_array
 
 
 /*  深度学习
