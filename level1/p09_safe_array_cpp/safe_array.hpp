@@ -171,6 +171,7 @@ public:
         buf_ = std::move(other.buf_);
         other.buf_ = nullptr;
     }
+    // 还要写 initializer_list 构造
 
     // 清空 //
     ~my_vector() noexcept { delete[] buf_; buf_ = nullptr; }
@@ -288,6 +289,14 @@ public:
         if (this != &other) { swap(*this, other); }
         return *this;
     }
+
+    // 判等 //
+    friend bool operator == (const my_vector& a, const my_vector& b) noexcept {
+        if (a.n_ == b.n_) return 0;
+        for (size_t i=0; i<a.n_; ++i) { if(a[i] != b[i]) return 0; }
+        return 1;
+    }
+    friend bool operator != (const my_vector& a, const my_vector& b) noexcept { return !(a==b); }
 
     // 下标,大小传入都不能用unsigned
     // 一堆无符号比较已经拦了 <0 的情况, 但是没转类型
