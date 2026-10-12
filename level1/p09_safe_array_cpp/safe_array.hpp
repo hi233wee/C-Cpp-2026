@@ -1,3 +1,5 @@
+#pragma once // 头文件包含保护
+
 #include<iostream>
 #include<string>
 #include<utility>
@@ -84,26 +86,22 @@ public:
     }
 
     // 取值 //
-    template<class T> friend       T& cast(      my_any& any) {
-        if (typeid(T) != any.type()) throw my_bad_cast("我的类型: ", any.type().name());
-        return *static_cast<      T*>(any.p_->addr());
-    }
     template<class T> friend const T& cast(const my_any& any) {
         if (typeid(T) != any.type()) throw my_bad_cast("我的类型: ", any.type().name()); // type里判空了
         return *static_cast<const T*>(any.p_->addr());
     }
-
-    template<class T> friend       T* cast(      my_any* any) {
-        if (!any    ) return nullptr;
-        if (!any->p_) return nullptr;
-        if (typeid(T) != any->p_->type()) return nullptr;
-        return static_cast<      T*>(any->p_->addr());
+    template<class T> friend       T& cast (     my_any& any) {
+        return const_cast<T&>(cast<T>(static_cast<const my_any&>(any)));
     }
+
     template<class T> friend const T* cast(const my_any* any) {
         if (!any    ) return nullptr;
         if (!any->p_) return nullptr;
         if (typeid(T) != any->p_->type()) return nullptr;
         return static_cast<const T*>(any->p_->addr());
+    }
+    template<class T> friend       T* cast(      my_any* any) {
+        return const_cast<T*>(cast<T>(static_cast<const my_any*>(any)));
     }
 
     // 赋值 //
@@ -134,30 +132,35 @@ public:
     }
 
     // 判等 //
-    friend bool operator == (const my_any& a, const my_any& b) noexcept {
+    friend bool operator == (const my_any& a, const my_any& b) {
         if (a.p_ == b.p_) return 1;
         if (a.has_value() && b.has_value()) { return a.type() == b.type(); }
         return 0;
     }
-    friend bool operator != (const my_any& a, const my_any& b) noexcept { return !(a==b); }
+    friend bool operator != (const my_any& a, const my_any& b) { return !(a==b); }
 
-    // 没写原地构造临时my_any
+    // 很多标准函数用这些就能带替, 只是麻烦点
     // 没写小对象优化
 };
+template<class T, class... A> my_any make_my_any(A&&... a) { // 构造临时
+    my_any tmp;
+    tmp.emplace<T>(std::forward<A>(a)...);
+    return tmp;
+}
 
 // my_vector //
 template<class T> class my_vector {
 private:
     T* buf_ = nullptr;
     size_t n_ = 0, cap_ = 0;
-    void move(const size_t& size) { // 外面自己判断越界等等
+    void new_move(const size_t& size) { // 外面自己判断越界等等
         T* tmp = new T[size];
         std::swap(buf_, tmp);
         for (size_t i=0; i<n_; ++i) { buf_[i] = std::move(tmp[i]); }
         delete[] tmp;
         cap_ = size;
     }
-    void grow() { move(cap_? cap_<<1 : 7); }
+    void grow() { new_move(cap_? cap_<<1 : 7); }
 
 public:
     // 构造 //
@@ -200,7 +203,7 @@ public:
     void resize(const long long& size) { resize(size, T{}); }
     void resize(const long long& size, const T& val) {
         if (size<0) throw my_error("改大小也不能为负啊");
-        move(size); // 标准不改cap_
+        new_move(size); // 标准不改cap_
         while (n_<size) { buf_[n_++] = val; }
         n_ = size;
     }
@@ -208,8 +211,8 @@ public:
     size_t capacity() const noexcept { return cap_; }
     void reserve(const long long& size) {
         if (size<0) throw my_error("改大小也不能为负啊");
-        if (size > cap_) { move(size); }
-        if (size < n_  ) { move(n_  ); } // 标准 <n_ 不干
+        if (size > cap_) { new_move(size); }
+        if (size < n_  ) { new_move(n_  ); } // 标准 <n_ 不干
     }
 
     // 插入 //
@@ -238,19 +241,19 @@ public:
         if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
         if (count<=0) return; // 我觉得还是静默好
         n_ += count;
-        if (n_ > cap_) { move(n_); }
-        for (size_t i=n_; i>pos; --i) { buf_[i] = std::move(buf_[i-1 - count]); } // 三处因为size_t在pos=0时下溢用i-1
-        for (size_t i = pos + count; i>pos; --i) { buf_[i-1] = val ; }
+        if (n_ > cap_) { new_move(n_); }
+        for (size_t i=n_-1; i >= pos+count; --i) { buf_[i] = std::move(buf_[i - count]); } // pos+count >0
+        for (size_t i = pos + count; i>pos; --i) { buf_[i-1] = val ; } // pos可能=0
     }
     template<class It, class = std::enable_if_t< !std::is_integral_v<It> > > // 防止整形匹配进来
     void in (const long long& pos, It begin, It end) { // end是末尾+1
         if (pos<0 || pos>n_) throw my_out_of_range("往哪插呢? ", n_);
-        if (end <= begin) return;
+        if (end <= begin) return; // 我觉得还是静默好
         const size_t place = end - begin;
         n_ += place;
-        if (n_ > cap_) { move(n_); }
-        for (size_t i=n_; i>pos; --i) { buf_[i-1] = std::move(buf_[i-1 - place]); }
-        for (It i = begin; i<end; ++i) { buf_[i - begin + pos] = *i ; }
+        if (n_ > cap_) { new_move(n_); }
+        for (size_t i=n_-1; i >= pos+place; --i) { buf_[i] = std::move(buf_[i - place]); }
+        for (It i=begin; i<end; ++i) { buf_[i - begin + pos] = *i ; }
     }
 
     // 清除 //
@@ -303,12 +306,12 @@ public:
     }
 
     // 判等 //
-    friend bool operator == (const my_vector& a, const my_vector& b) noexcept {
+    friend bool operator == (const my_vector& a, const my_vector& b) {
         if (a.n_ != b.n_) return 0;
         for (size_t i=0; i<a.n_; ++i) { if(a[i] != b[i]) return 0; }
         return 1;
     }
-    friend bool operator != (const my_vector& a, const my_vector& b) noexcept { return !(a==b); }
+    friend bool operator != (const my_vector& a, const my_vector& b) { return !(a==b); }
 
     // 下标,大小传入都不能用unsigned
     // 一堆无符号比较已经拦了 <0 的情况, 但是没转类型
@@ -326,6 +329,8 @@ public:
 有个细节, 进去时去掉(const/volatile/引用/数组), 之后全都不干这个
 
 &变量 产生临时指针, 寿命短, 不能引用
+
+#pragma once 头文件包含保护
 
 protected: 能给派生用, 但外部不能用
 
@@ -351,8 +356,9 @@ template<class T> 创建模版, 使用 <> 或 变量 告诉编译器类型, 并�
 
 template<class T> my_any(std::initializer_list<T>) = delete: "= delete" 删掉
 
-..., 具体三类用法(模版参数包, 函数参数包, 包展开)见L52-53
+..., 具体三类用法(模版参数包, 函数参数包, 包展开)见L52-53等
     写(A,B), 依次传入, 跟在函数后面依次使用函数
+    这里用这个可以调用类型的多参构造
 
 forward<T>(a)... 将a的包展开依次保留左右值分发
 
@@ -364,6 +370,8 @@ using T 定义类型
 
 static_cast<T>(a) 更好的类型转换
     static 是编译期干的
+
+const_cast<T>() 去const
 
 move() 把变量转为右值引用
 
