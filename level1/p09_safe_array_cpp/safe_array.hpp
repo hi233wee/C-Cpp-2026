@@ -3,6 +3,7 @@
 #include<iostream>
 #include<string>
 #include<utility>
+#include<compare>
 #include<typeinfo>
 #include<stdexcept>
 
@@ -41,6 +42,9 @@ private:
         virtual const std::type_info& type() const = 0; // 取类型
         virtual       void* addr()       noexcept = 0;
         virtual const void* addr() const noexcept = 0; // 取地址
+
+        virtual bool operator == (const Base& other) const = 0;
+        virtual std::partial_ordering operator <=> (const Base& other) const = 0;
     };
     
     // 具体存储 //
@@ -53,6 +57,20 @@ private:
         const std::type_info& type() const noexcept override { return typeid(T); }
               void* addr()       noexcept override { return &val_; }
         const void* addr() const noexcept override { return &val_; }
+
+        bool operator == (const Base& other) const override {
+            if (type() != other.type()) { return 0; }
+            if constexpr (requires { val_ == val_; } ) {
+                return val_ == static_cast<const Holder&>(other).val_;
+            }
+            return 0;
+        }
+        std::partial_ordering operator <=> (const Base& other) const override {
+            if (type() != other.type()) { return std::partial_ordering::unordered; }
+            if constexpr (requires { val_ <=> val_; } ) {
+                return val_ <=> static_cast<const Holder&>(other).val_;
+            } else { return std::partial_ordering::unordered; }
+        }
     };
 
     Base* p_ = nullptr; // 实际指向Holder
@@ -103,6 +121,7 @@ public:
     template<class T> friend       T* cast(      my_any* any) {
         return const_cast<T*>( cast<T>( static_cast<const my_any*>(any) ) );
     }
+    template<class T> operator T() const { return cast<T>(*this); } // 类型转换, 在这相当于取值, 还有我把隐式转换开了
 
     // 赋值 //
     template<class T, class... A> std::decay_t<T>& emplace(A&&... val) { // 多种赋值
@@ -133,13 +152,22 @@ public:
 
     // 判等 //
     friend bool operator == (const my_any& a, const my_any& b) {
-        if (a.p_ == b.p_) { return 1; }
-        if (a.has_value() && b.has_value()) { return a.type() == b.type(); }
-        return 0;
+        if ( a.p_ ==  b.p_) { return 1; }
+        if (!a.p_ || !b.p_) { return 0; }
+        return *a.p_ == *b.p_; // 因为这里拿不到类型
     }
     friend bool operator != (const my_any& a, const my_any& b) { return !(a==b); }
 
+    // 比较 //
+    friend std::partial_ordering operator <=> (const my_any& a, const my_any& b) {
+        if (a.p_ == b.p_) { return std::partial_ordering::equivalent; }
+        if (!a.p_) { return std::partial_ordering::less;    }
+        if (!b.p_) { return std::partial_ordering::greater; }
+        return *a.p_ <=> *b.p_; // 因为这里拿不到类型
+    }
+
     // 很多标准函数用这些就能带替, 只是麻烦点
+    // 更多运算符不想加了, 老老实实cast吧
     // 没写小对象优化
 };
 template<class T, class... A> my_any make_my_any(A&&... a) { // 构造临时
@@ -173,6 +201,7 @@ public:
     my_vector(     my_vector&& other) noexcept : n_(other.n_), cap_(other.cap_) { // 移动
         buf_ = std::move(other.buf_);
         other.buf_ = nullptr;
+        other.n_ = other.cap_ = 0; // 防止你作死传变量右值
     }
     my_vector(std::initializer_list<T> il) : cap_(il.size()) { // {} 构造
         if (!cap_) { return; }
@@ -212,7 +241,7 @@ public:
     void reserve(const long long& size) {
         if (size<0) { throw my_error("改大小也不能为负啊"); }
         if (size > cap_) { new_move(size); }
-        if (size < n_  ) { new_move(n_  ); } // 标准 <n_ 不干
+        if (size <=  n_) { new_move(n_  ); } // 标准 <n_ 不干
     }
 
     // 插入 //
@@ -225,33 +254,47 @@ public:
         if (n_ == cap_) { grow(); }
         buf_[n_++] = std::move(val);
     }
+    void in(std::initializer_list<T> il) {
+        if (il.size() == 0) { return; } // 虽然放过去没事
+        if (n_ + il.size() > cap_) { new_move(n_ + il.size()); }
+        for (size_t i=n_; const T& x : il) { buf_[i++] = x ; }
+        n_ += il.size();
+    }
     void in(const long long& pos, const T& val) {
         if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
-        if (++n_ > cap_) { grow(); }
-        for (size_t i=n_; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
+        if (n_ == cap_) { grow(); }
+        for (size_t i=n_++; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
         buf_[pos] = val;
     }
     void in(const long long& pos,      T&& val) {
         if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); } // =n 不越界
-        if (++n_ > cap_) { grow(); }
-        for (size_t i=n_-1; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
+        if (n_ == cap_) { grow(); }
+        for (size_t i=n_++; i>pos; --i) { buf_[i] = std::move(buf_[i-1]); }
         buf_[pos] = std::move(val);
     }
     void in(const long long& pos, const long long& count, const T& val) { // 反正拷贝这么多次就不写移动了
         if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
         if (count<=0) { return; } // 我觉得还是静默好
+        if (n_+count > cap_) { new_move(n_ + count); }
         n_ += count;
-        if (n_ > cap_) { new_move(n_); }
         for (size_t i=n_-1; i >= pos+count; --i) { buf_[i] = std::move(buf_[i - count]); } // pos+count >0
-        for (size_t i = pos + count; i>pos; --i) { buf_[i-1] = val ; } // pos可能=0
+        for (size_t i=pos; i < pos + count; ++i) { buf_[i] = val ; }
     }
-    template<class It, class = std::enable_if_t< !std::is_integral_v<It> > > // 防止整形匹配进来
+    void in(const long long& pos, std::initializer_list<T> il) {
+        if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
+        if (il.size() == 0) { return; } // 我觉得还是静默好
+        if (n_ + il.size() > cap_) { new_move(n_ + il.size()); }
+        n_ += il.size();
+        for (size_t i=n_-1; i >= pos + il.size(); --i) { buf_[i] = std::move(buf_[i - il.size()]); }
+        for (size_t i=pos; const T& x : il) { buf_[i++] = x ; }
+    }
+    template<class It, class = std::enable_if_t< !std::is_integral_v<It> > > // 防止整形匹配进来(浮点会但是报错)
     void in (const long long& pos, It begin, It end) { // end是末尾+1
         if (pos<0 || pos>n_) { throw my_out_of_range("往哪插呢? ", n_); }
         if (end <= begin) { return; } // 我觉得还是静默好
         const size_t place = end - begin;
+        if (n_+place > cap_) { new_move(n_ + place); }
         n_ += place;
-        if (n_ > cap_) { new_move(n_); }
         for (size_t i=n_-1; i >= pos+place; --i) { buf_[i] = std::move(buf_[i - place]); }
         for (It i=begin; i<end; ++i) { buf_[i - begin + pos] = *i ; }
     }
@@ -301,23 +344,40 @@ public:
         return *this;
     }
     my_vector& operator = (     my_vector&& other) noexcept {
-        if (this != &other) { swap(*this, other); }
+        if (this != &other) { swap(*this, other); } // 我去, 你传变量右值有惊喜
         return *this;
     }
 
     // 判等 //
     friend bool operator == (const my_vector& a, const my_vector& b) {
         if (a.n_ != b.n_) { return 0; }
-        for (size_t i=0; i<a.n_; ++i) { if(a[i] != b[i]) return 0; }
+        const size_t mn = (a.n_ < b.n_)? a.n_ : b.n_;
+        if (!mn) { return a.n_ == b.n_; }
+        if constexpr (requires { a[0] == b[0]; } ) { // 尝试有没有比较
+            for (size_t i=0; i<mn; ++i) { if (a[i] != b[i]) return 0; }
+        } else { return 0; }
         return 1;
     }
     friend bool operator != (const my_vector& a, const my_vector& b) { return !(a==b); }
+    
+    // 比较 //
+    friend std::partial_ordering operator <=> (const my_vector& a, const my_vector& b) {
+        const size_t mn = (a.n_ < b.n_)? a.n_ : b.n_;
+        if (!mn) { return a.n_ <=> b.n_; }
+        if constexpr (requires { a[0] <=> b[0]; } ) { // 尝试有没有比较
+            for (size_t i=0; i<mn; ++i) {
+                if (auto o = (a[i] <=> b[i]); o!=0) { return o; } // 这里隐式转换了
+            }
+        } else { return std::partial_ordering::unordered; }
+        return a.n_ <=> b.n_; // 这里隐式转换了
+    }
 
     // 下标,大小传入都不能用unsigned
     // 一堆无符号比较已经拦了 <0 的情况, 但是没转类型
-    // 很多标准函数用这些就能带替, 只是麻烦点
     // 定义时实例化天然挡不同类型操作
     // out内存释放晚
+    // 很多标准函数用这些就能带替, 只是麻烦点
+    // 把指针当迭代器应该没问题
 };
 // 把my_vector套在my_any外面就是safe_array了
 // 虽然但是my_vector本身就是传统safe_array
@@ -389,5 +449,19 @@ typeid() 得到不带(const/volatile/引用/数组)的类型信息
 
 运算符重载时
     成员函数 =/[]/()/->/类型转换符 传右, 左用this指针
-    非成员 ==/!= 传两边
+    非成员 ==/!=/<=>/... 传两边
+
+<=> c++20的, 一次性< > <= >= ,配合一种返回类型
+    equal/ less/ greater
+    以及比较模式类型
+    strong_ordering	    整数、指针、string
+    weak_ordering	    忽略大小写的字符串等
+    partial_ordering    浮点	            有第四种状态 unordered（不可比）
+    std::compare_three_way_result_t<T> 这个返回对应类型
+    还有它们也会隐式转换
+
+if(init; bool) 我去, 好用, 作用域直接限制 (c++20)
+    for(init; auto x : a) 同理
+
+if constexpr (requires { a <=> b; } ) 尝试有没有比较(里面可替换)
 */

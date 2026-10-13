@@ -1,6 +1,6 @@
 #include "safe_array.hpp"
 using namespace std;
-
+#include<vector>
 int main() {
     // 定义 //
     // 取用 //
