@@ -87,6 +87,12 @@ public:
     template<class T> my_any(T val) : p_(make<std::decay_t<T> >(std::move(val))) {}; // T自动匹配左右值(不能多参)
     template<class T> my_any(std::initializer_list<T>) = delete; // 防止传入多参时隐式转换到这个, 可能出事
 
+    template<class T, class... A> my_any make_my_any(A&&... a) { // 构造临时
+        my_any tmp;
+        tmp.emplace<T>(std::forward<A>(a)...);
+        return tmp;
+    }
+
     // 清空 //
     ~my_any()    noexcept { delete p_; p_=nullptr; }
     void clear() noexcept { delete p_; p_=nullptr; }
@@ -170,11 +176,6 @@ public:
     // 更多运算符不想加了, 老老实实cast吧
     // 没写小对象优化
 };
-template<class T, class... A> my_any make_my_any(A&&... a) { // 构造临时
-    my_any tmp;
-    tmp.emplace<T>(std::forward<A>(a)...);
-    return tmp;
-}
 
 // my_vector //
 template<class T> class my_vector {
