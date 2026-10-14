@@ -72,8 +72,8 @@ bool is_prime (uLL n) { //------------------------------判断素数
     // 若p为素数, a与p互质, 则a^(p-1) %p = 1 or p-1.
     // 当底数合适时, 可逆用判断一定范围内的素数
     if (n<2)    { return false; }
-    if (n%2==0) { return false; }
     if (n==2)   { return true ; }
+    if (n%2==0) { return false; }
     // 先把n-1分离成d * 2^s //
     uLL d=n-1; int s=0;
     while (d%2==0) { d>>=1; s++; }

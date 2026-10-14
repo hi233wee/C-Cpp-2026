@@ -45,7 +45,6 @@ int main () {
     printf("   下界: "); L=rd();
     printf("   上界: "); R=rd();
     printf("你真棒! 我将会输出随机生成的链表\n");
-    printf("  然后把链表反转\n");
     // 随机数 //
     random_device RD;
     mt19937 RNG(RD());
@@ -55,7 +54,10 @@ int main () {
     // 创建, 输出, 翻转 //
     for (size_t i=n+1; --i;) { add(head, Rand()); }
     putn(head);
+
+    printf("  然后把链表反转\n");
     reverse(head);
+    putn(head);
     // 找5 //
     printf("然后我会尝试找第一个5\n");
     printf("  并返回它的位置\n");

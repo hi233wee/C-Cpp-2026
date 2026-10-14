@@ -12,16 +12,16 @@ typedef unsigned char      uchar; // 8位
 const uint N = 1000; // 要计算的上界(最大10^10)
 const uint M = N>>1;
 
-#define TYPE uint //-------筛的类型
-#define BITS 32 //---------筛的类型的占用bit(位)
-const uint NW= M/BITS+2; //-筛数组大小
-TYPE o[NW]; //-------------位图筛子
+#define TYPE uint //---------筛的类型
+#define BITS 32 //-----------筛的类型的占用bit(位)
+const uint NW= M/BITS+2; //--筛数组大小
+TYPE o[NW]; //---------------位图筛子
 // 每一位对应一个数
 // 因为只筛奇数所以再除2
 
-uchar T1[10]  ; //  0-9  //复制表
-usint T2[100] ; // 00-99 //复制表
-uint  T3[1000]; // 000-999//复制表
+uchar T1[10]  ; //   0-9   //复制表
+usint T2[100] ; //  00-99  //复制表
+uint  T3[1000]; // 000-999 //复制表
 // T4 有 40KB 内存到cpu远
 void init_T () {
     char tmp[10]; // 临时字符(存一个数)
@@ -35,9 +35,19 @@ void init_T () {
 
 char s[N*7]; //------------输出缓冲(反正*7能装)
 uint i, j, w, k, x, t; //--i,k循环变量, x当前数, t缓冲长度
-#define W1(x) {           s[t] =T1[x]; t+=1; }
-#define W2(x) { *(usint*)(s+t) =T2[x]; t+=2; }
-#define W3(x) { *(uint *)(s+t) =T3[x]; t+=3; }
+#define W1(x) { memcpy(s+t, &T1[x], 1); t+=1; }
+#define W2(x) { memcpy(s+t, &T2[x], 2); t+=2; }
+#define W3(x) { memcpy(s+t, &T3[x], 3); t+=3; }
+
+inline void put(uint x) {
+         if (x>999999) { W3(x/10000); W3(x/10%1000); W1(x%10); } // 7
+    else if (x>99999 ) { W3(x/1000); W3(x%1000); }               // 6
+    else if (x>9999  ) { W3(x/100); W2(x%100); }                 // 5
+    else if (x>999   ) { W3(x/10); W1(x%10); }                   // 4
+    else if (x>99    ) { W3(x); }                                // 3
+    else if (x>9     ) { W2(x); }                                // 2
+    else               { W1(x); }                                // 1
+}
 
 int main () {
     // 初始化 //
@@ -68,19 +78,8 @@ int main () {
             
             w &= ~(1u<<__builtin_ctz(w));  // 标记刚处理完的这一个
             x = (i<<1)|1;
-            /*
-                 if (x>999999) { W3(x/10000); W3(x/10%1000); W1(x%10); } // 7
-            else if (x>99999 ) { W3(x/1000); W3(x%1000); }               // 6
-            else if (x>9999  ) { W3(x/100); W2(x%100); }                 // 5
-            else if (x>999   ) { W3(x/10); W1(x%10); }                   // 4
-            else if (x>99    ) { W3(x); }                                // 3
-            else if (x>9     ) { W2(x); }                                // 2
-            else              { W1(x); }                                // 1
-            */
-                 if (x>99) { W3(x); } // 3
-            else if (x>9 ) { W2(x); } // 2
-            else          { W1(x); } // 1
-
+            
+            put(x);
             s[t++]='\n';
 
             for (j=i+x; j < M; j+=x) { o[j>>5] |= 1u<<(j&31); }
