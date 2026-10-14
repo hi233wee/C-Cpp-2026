@@ -87,7 +87,7 @@ public:
     template<class T> my_any(T val) : p_(make<std::decay_t<T> >(std::move(val))) {}; // T自动匹配左右值(不能多参)
     template<class T> my_any(std::initializer_list<T>) = delete; // 防止传入多参时隐式转换到这个, 可能出事
 
-    template<class T, class... A> my_any make_my_any(A&&... a) { // 构造临时
+    template<class T, class... A> friend my_any make_my_any(A&&... a) { // 构造临时
         my_any tmp;
         tmp.emplace<T>(std::forward<A>(a)...);
         return tmp;
