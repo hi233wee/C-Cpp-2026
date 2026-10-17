@@ -9,7 +9,7 @@ typedef unsigned int       uint ; // 32位
 typedef unsigned short int usint; // 16位
 typedef unsigned char      uchar; // 8位
 
-const uint N = 1000; // 要计算的上界(最大10^10)
+const uint N = 1000; // 要计算的上界(最大10^9)
 const uint M = N>>1;
 
 #define TYPE uint //---------筛的类型
@@ -66,7 +66,7 @@ int main () {
     LARGE_INTEGER frequency, start, end;
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
-    // 欧拉筛//只筛奇数 x = i*2 +1
+    // 埃氏筛 // 只筛奇数 x = i*2 +1
     s[0]='2'; s[1]='\n'; t=2;
     for (k=0; k<NW; ++k) {
         // 位运算更快 ( >> << | & ^ ! ~ )//但是优先级低
@@ -94,7 +94,7 @@ int main () {
 
     // system("pause");
     return 0;
-} // O(n)
+} // O(n log log n)
 
 // 筛选端 //
 // 位图, 位运算
@@ -106,6 +106,6 @@ int main () {
 
 // 硬件端 //
 // 现在一般能一次处理32位(虽然但是我是x64)
-// 现在一般当计算所需内存在32KB内, 可用最靠近CPU的那块缓存(只有一周期)
+// 现在一般当计算所需内存在32KB内, 可用最靠近CPU的那块缓存(只有4-5周期)
 
 // 100000000000000000版(10^18)爆内存, 分段太恶心, 还有输出谁存得下

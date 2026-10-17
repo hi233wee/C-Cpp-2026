@@ -4,8 +4,6 @@
 #include <windows.h>
 using namespace std;
 
-#define waittime 7000
-
 int rd ();
 
 int n; // 盘子数
