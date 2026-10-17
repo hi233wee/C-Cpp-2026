@@ -9,7 +9,8 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-lwinmm"
             ],
             "options": {
                 "cwd": "${fileDirname}"
@@ -32,7 +33,8 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-lwinmm"
             ],
             "options": {
                 "cwd": "${fileDirname}"
