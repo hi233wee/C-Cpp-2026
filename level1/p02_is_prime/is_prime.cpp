@@ -69,7 +69,8 @@ uLL power_mod (uLL a, uLL b, uLL mod) { //--------------a^b % mod(快速幂)
 
 bool is_prime (uLL n) { //------------------------------判断素数
     // 费马小定理:
-    // 若p为素数, a与p互质, 则a^(p-1) %p = 1 or p-1.
+    // 若p为素数, a与p互质, 则a^(p-1) %p ≡ 1.
+    // 米勒-拉宾在它基础上加了二次探方: 若 x² ≡ 1 (mod p), 则 x ≡ ±1 (mod p)
     // 当底数合适时, 可逆用判断一定范围内的素数
     if (n<2)    { return false; }
     if (n==2)   { return true ; }
