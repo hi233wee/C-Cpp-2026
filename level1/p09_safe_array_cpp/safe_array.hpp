@@ -1,11 +1,11 @@
 #pragma once // 头文件包含保护
 
-#include<iostream>
-#include<string>
-#include<utility>
-#include<compare>
-#include<typeinfo>
-#include<stdexcept>
+#include <iostream>
+#include <string>
+#include <utility>
+#include <compare>
+#include <typeinfo>
+#include <stdexcept>
 
 // 错误信息 //
 class my_error : public std::exception { // 继承 std::exception
@@ -45,6 +45,8 @@ private:
 
         virtual bool operator == (const Base& other) const = 0;
         virtual std::partial_ordering operator <=> (const Base& other) const = 0;
+
+        virtual std::ostream& operator << (std::ostream& os) const = 0;
     };
     
     // 具体存储 //
@@ -71,6 +73,12 @@ private:
                 return val_ <=> static_cast<const Holder&>(other).val_;
             } else { return std::partial_ordering::unordered; }
         }
+
+        std::ostream& operator << (std::ostream& os) const override {
+            if constexpr (requires { os << val_; } ) { os << val_; }
+            else { throw my_error(std::string(type().name()) + " 不支持 << 输出"); }
+            return os;
+        }
     };
 
     Base* p_ = nullptr; // 实际指向Holder
@@ -86,6 +94,14 @@ public:
     my_any(     my_any&& other) noexcept : p_(other.p_) { other.p_ = nullptr; }        // 移动
     template<class T> my_any(T val) : p_(make<std::decay_t<T> >(std::move(val))) {}; // T自动匹配左右值(不能多参)
     template<class T> my_any(std::initializer_list<T>) = delete; // 防止传入多参时隐式转换到这个, 可能出事
+    
+    template<class T, class... A> std::decay_t<T>& emplace(A&&... val) { // 多参构造, 直接返回引用, 方便外面操作
+        using TT = std::decay_t<T>;
+        static_assert(!std::is_same_v<TT, my_any>, "把any存到any很好玩吗?"); // 万一嵌套出事
+        clear();
+        p_ = make<TT>(std::forward<A>(val)...);
+        return *static_cast<TT*>(p_->addr());
+    }
 
     // 清空 //
     ~my_any()    noexcept { delete p_; p_=nullptr; }
@@ -124,14 +140,6 @@ public:
     template<class T> operator T() const { return cast<T>(*this); } // 类型转换, 在这相当于取值, 还有我把隐式转换开了
 
     // 赋值 //
-    template<class T, class... A> std::decay_t<T>& emplace(A&&... val) { // 多种赋值
-        using TT = std::decay_t<T>;
-        static_assert(!std::is_same_v<TT, my_any>, "把any存到any很好玩吗?"); // 万一嵌套出事
-        clear();
-        p_ = make<TT>(std::forward<A>(val)...);
-        return *static_cast<TT*>(p_->addr()); // AI说标准能返回引用, 方便外面操作(注意上面有&)
-    }
-
     my_any& operator = (const my_any& other)          { // 拷贝
         if (this != &other) {
             my_any tmp(other); // tmp离开后调~my_any()
@@ -166,6 +174,12 @@ public:
         return *a.p_ <=> *b.p_; // 因为这里拿不到类型
     }
 
+    // 输出 //
+    friend std::ostream& operator << (std::ostream& os, const my_any& a) {
+        if (!a.p_) { return os; }
+        return *a.p_ << os; // 为什么要求成员函数的左操作数是本类对象
+    }
+
     // 很多标准函数用这些就能带替, 只是麻烦点
     // 更多运算符不想加了, 老老实实cast吧
     // 没写小对象优化
@@ -182,6 +196,7 @@ private:
     T* buf_ = nullptr;
     size_t n_ = 0, cap_ = 0;
     void new_move(const size_t& size) { // 外面自己判断越界等等
+        if (n_>size) { n_ = size; }
         T* tmp = new T[size];
         std::swap(buf_, tmp);
         for (size_t i=0; i<n_; ++i) { buf_[i] = std::move(tmp[i]); }
@@ -194,8 +209,8 @@ public:
     // 构造 //
     my_vector(                      ) noexcept = default;
     my_vector(const my_vector& other)          : n_(other.n_), cap_(other.cap_) { // 拷贝
-        if(!other.cap_) { return; }
-        buf_ = new T[other.cap_];
+        if(!cap_) { return; }
+        buf_ = new T[cap_];
         for (size_t i=0; i<n_; ++i) { buf_[i] = other.buf_[i]; }
     }
     my_vector(     my_vector&& other) noexcept : n_(other.n_), cap_(other.cap_) { // 移动
@@ -370,6 +385,15 @@ public:
             }
         } else { return std::partial_ordering::unordered; }
         return a.n_ <=> b.n_; // 这里隐式转换了
+    }
+
+    // 输出 //
+    friend std::ostream& operator << (std::ostream& os, const my_vector& v) {
+        os << "{ ";
+        if(v.n_) { os << v.buf_[0]; }
+        for (size_t i=1; i<v.n_; ++i) { os << ", " << v.buf_[i]; }
+        os << " }";
+        return os;
     }
 
     // 下标,大小传入都不能用unsigned
