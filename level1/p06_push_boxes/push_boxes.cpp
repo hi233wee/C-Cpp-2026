@@ -4,6 +4,7 @@
 #include <fstream>
 #include <map>
 #include <filesystem>
+#include <cstdio>
 using namespace std;
 
 random_device RD;
@@ -515,6 +516,14 @@ bool save_score () { //---------------------------------保存,返回是否新�
         out <<it->first        <<" "
             <<it->second.first <<" "
             <<it->second.second<<"\n";
+    if (!out.good()) { // 写到一半出错(磁盘满/无权限)
+        out.close();
+        put_line( 3, 0,12,   L"emmm, 坏了, 保存失败了");
+        put_line( 3, 1,14,   L"哎呀不管了, 先祝贺你再说");
+        put_line( 0, 2, 7, L"按任意键继续...");
+        _getch();
+        return 1;
+    }
     out.close(); // 防止阻碍合并
     error_code ec;
     filesystem::rename(SCORE+".tmp", SCORE, ec); // 合并

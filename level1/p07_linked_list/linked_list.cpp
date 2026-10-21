@@ -2,7 +2,7 @@
 #include <conio.h>
 #include <windows.h>
 using namespace std;
-typedef unsigned long long uLL;
+
 typedef long long LL;
 typedef unsigned int uint;
 typedef unsigned short int usint;
@@ -15,13 +15,13 @@ int  get_cursor_line ();
 int  get_console_width ();
 void erase_line (int y);
 
-uLL rd ();
+LL rd ();
 
 struct linked_list {
     LL V;           // 值
     linked_list* N; // 下一项
 };
-uLL n; //------------------------节点个数
+LL n; //-------------------------节点个数
 LL L, R; //----------------------值域
 char s[7777777], tmp[77]; //-----输出缓冲
 LL x; uint t, tt; //-------------辅助变量
@@ -37,14 +37,16 @@ int main () {
     SetConsoleCP(65001);
 
     system("cls");
+    printf("先提醒一句, 你别乱输\n我直接选最近的连续数字\n并且不管大小放任它溢出\n\n");
     printf("请输入链表的长度\n  ");
     n=rd();
-    if (n==0) { printf("长度为零?"); return 0; }
+    if (n<=0) { printf("长度小于等于零?"); return 0; }
 
     printf("请输入链表中元素的取值范围\n");
     printf("   下界: "); L=rd();
     printf("   上界: "); R=rd();
-    printf("你真棒! 我将会输出随机生成的链表\n");
+    if (L>R) { printf("我真服了, 之后绝对运行出错"); }
+    else { printf("你真棒! 我将会输出随机生成的链表\n"); }
     // 随机数 //
     random_device RD;
     mt19937 RNG(RD());
@@ -156,9 +158,9 @@ void find_5 (linked_list*& i, size_t& id) { //----------找第一个值为5的�
 
 // 小插件 //
 
-uLL rd () {
-    int c=getchar(); uLL x=0;
-    while (c!=EOF && !isdigit(c)) { c=getchar(); }
+LL rd () {
+    int c=getchar(); LL x=0; bool f = 0;
+    while (c!=EOF && !isdigit(c)) { if (c=='-') f=1; c=getchar(); }
     if (c==EOF) { return 0; } // ai说有神秘原因会输入这个
     while (isdigit(c))
     { x = x*10 +c -48; c=getchar(); }

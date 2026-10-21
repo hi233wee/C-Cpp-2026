@@ -436,6 +436,10 @@ bool save () { //---------------------------------------保存
     if (!S.is_open()) { return 0; }
     for (auto i : stock)
         S <<i.name <<' ' <<i.n <<'\n';
+    if (!S.good()) { 
+        S.close();
+        return 0;
+    }
     S.close(); // 防止阻碍合并
     error_code ec;
     filesystem::rename(STOCK + ".tmp", STOCK, ec); // 合并
