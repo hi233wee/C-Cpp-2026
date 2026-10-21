@@ -21,8 +21,8 @@ public:
     animal(const animal& a) noexcept : name_(a.name_), sound_(a.sound_) {};
 
     const void call() const noexcept {
-        PlaySoundA((A + name_ + E).c_str(), NULL, SND_FILENAME);
-        // 文件格式自己看 //
+        PlaySoundA((A + name_ + E).c_str(), NULL, SND_FILENAME | SND_NODEFAULT);
+        // 文件格式自己看, 不一样就滚 //
 
         cout << sound_ << '\n';
     }
@@ -33,13 +33,21 @@ class zoo {
 private:
     vector<animal*> p_;
 public:
-    ~zoo() { p_.clear(); }
+    zoo() {};
+    zoo(const zoo&) = delete;
+    zoo& operator=(const zoo&) = delete;
+
+    ~zoo() {
+        for (size_t i=0; i<p_.size(); ++i) { delete p_[i]; }
+        p_.clear();
+    }
 
     void add(const animal& a) {
         p_.push_back(new animal(a));
     }
     void remove(const long long& pos) {
         if (pos < 0 || pos >= p_.size()) return; // 懒得写error
+        delete p_[pos];
         p_.erase(p_.begin() + pos);
     }
 
