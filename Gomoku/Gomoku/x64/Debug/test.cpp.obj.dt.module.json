@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Gomoku\\x64\\Debug\\test.obj",
+            "outputs": [
+                "Gomoku\\x64\\Debug\\test.cpp.obj.dt.module.json",
+                "Gomoku\\x64\\Debug\\test.cpp.obj.dt.d.json"
+            ],
+            "requires": []
+        }
+    ]
+}
