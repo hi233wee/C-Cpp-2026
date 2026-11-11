@@ -46,6 +46,7 @@ struct things {
 vector<things> stock, tmp; //----库存, 临时
 void search (string name);
 void update (string name, LL n);
+static bool cmp(const things& a, const things& b);
 
 const string STOCK=R"(stock.warehouse)"; // 仓库文件
 bool load ();
@@ -269,8 +270,10 @@ bool input_screen (string&name, LL&n) { //--------------进出库输入
     getline(cin, name); // 不想再开一个
 
     if (name.empty()) { hide_cursor(); return 0; }
-    n=atoi(name.c_str());
-    if (n<=0) { // 非正数
+    char* end = nullptr;
+    errno = 0;
+    n = strtoll(name.c_str(), &end, 10);
+    if (n<=0 || *end != '\0' || errno == ERANGE) { // 非正数 / 输入神秘
         put_line( 8,15,12, L"不是, 你输的啥? 重来!");
         gotoxy( 0,16); set_color( 0, 7);
         then();
@@ -338,6 +341,14 @@ void in_screen () { //----------------------------------入库
     for (;;) {
         if (! input_screen(name, n)) { return; }  // 空输入退出
         if (confirm_screen(name, n)) { break ; }  // 确认了继续
+    }
+    // 判断仓库爆没爆 //
+    vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
+    if (it!=stock.end() && it->n > 7777777777777777777LL - n) {
+        put_line(15,17,12, L"爆仓了! "); // 接着确认界面
+        gotoxy( 0,18); set_color( 0, 7);
+        then();
+        return;
     }
 
     update(name, n);
@@ -427,7 +438,7 @@ bool load () { //---------------------------------------读取库存
         A.lower=tolower(A.name);
         stock.push_back(A);
     }
-    sort(stock.begin(), stock.end(), [](const things&a, const things&b){ return a.lower<b.lower; });
+    sort(stock.begin(), stock.end(), cmp);
     return 1;
 }
 
@@ -458,20 +469,24 @@ void search (string name) { //--------------------------将搜索到的放入tmp
 }
 
 void update (string name, LL n) { //--------------------更新库存数据(区分大小写)
-    vector<things>::iterator it =find_if(stock.begin(), stock.end(), [&name](const things&a){ return a.name==name; });
+    things tmp = {name, tolower(name), n};
+    vector<things>::iterator it = lower_bound(stock.begin(), stock.end(), tmp, cmp);
     // [&]所有外部引用捕获,[=]值捕获,[&x][=x]只捕获x,[=,&x]默认 值捕获,x引用//本身固定传入const &
-    if (it==stock.end()) {
+    if (it==stock.end() || it->name != name) {
         if (n<0) { return; }
         things a;
         a.name  = name;
         a.n     = n;
         a.lower = tolower(name);
-        stock.push_back(a);
-        sort(stock.begin(), stock.end(), [](const things&a, const things&b){ return a.lower<b.lower; });
+        stock.insert(it, a);
     } else {
         it->n += n;
         if (it->n <=0) { stock.erase(it); }
     }
+}
+
+static bool cmp(const things& a, const things& b) { //---------比较名字
+    return a.lower != b.lower? a.lower < b.lower : a.name < b.name;
 }
 
 // 小插件 //

@@ -37,6 +37,3 @@ template<ui64 Precision> BigNum<Precision> isqrt(BigNum<Precision>& a) {
     }
     return x;
 }
-
-#undef ui64
-#undef ui16

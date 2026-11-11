@@ -1,114 +1,158 @@
-#include <SFML/Graphics.hpp>
 #include <iostream>
+#include <cstring>
 
-const int SIZE = 15;
-const int CELL = 36;
-const int OFFSET = 20;
-int board[SIZE][SIZE] = { 0 }; // 0空，1黑，2白
-bool blackTurn = true;
-bool gameOver = false;
+typedef int i32;
+typedef short int i16;
+typedef const short int ci16;
+typedef unsigned char ui8;
+typedef unsigned short int ui16;
+typedef const unsigned char cui8;
+typedef const unsigned short int cui16;
 
-bool checkWin(int x, int y, int color)
-{
-    int dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
-    for (auto& d : dirs)
-    {
-        int cnt = 1;
-        int dx = d[0], dy = d[1];
-        for (int i = 1; i < 5; i++)
-        {
-            int nx = x + dx * i;
-            int ny = y + dy * i;
-            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
-                cnt++;
-            else break;
-        }
-        for (int i = 1; i < 5; i++)
-        {
-            int nx = x - dx * i;
-            int ny = y - dy * i;
-            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
-                cnt++;
-            else break;
-        }
-        if (cnt >= 5) return true;
-    }
-    return false;
-}
+bool check_win(i16 x, i16 y, ui8 color); // 有人要用
+
+#include "GUI.hpp"
+#include "TEXT.hpp"
+#include "AI.hpp"
+
+static constexpr cui16 SIZE = 15;       // SIZE * SIZE
+static constexpr cui16 CELL = 18<<1;    // 一个格子的像素
+static constexpr cui16 OFFSET = 32;     // 棋盘边上空的像素
+
+static ui8 board[SIZE][SIZE] = { 0 };   // 0 空 , 1 黑 , 2 白
+static ui16 step_x[SIZE * SIZE] = { 0 };
+static ui16 step_y[SIZE * SIZE] = { 0 };
+static ui16 step_count = 0;
+static ui8 turn = 1;
+static ui8 winner = 0; // 0没结束, 1黑, 2白
+
 
 int main()
 {
-    sf::RenderWindow win(sf::VideoMode({ OFFSET * 2 + CELL * SIZE, OFFSET * 2 + CELL * SIZE }), "Gomoku");
-
-    while (win.isOpen())
+    sf::RenderWindow window = get_window< SIZE, CELL, OFFSET>();
+	load_font();
+   
+    while (window.isOpen())
     {
-        while (auto event = win.pollEvent())
+        while (auto event = window.pollEvent())
         {
-            if (event->is<sf::Event::Closed>())
-            {
-                win.close();
-            }
+            if (event->is<sf::Event::Closed>()) { window.close(); }
 
             if (auto* mouse = event->getIf<sf::Event::MouseButtonPressed>())
             {
-                if (mouse->button == sf::Mouse::Button::Left && !gameOver)
+                // 下棋
+                if (mouse->button == sf::Mouse::Button::Left)
                 {
-                    int mx = mouse->position.x;
-                    int my = mouse->position.y;
-                    int gx = static_cast<int>(round((mx - OFFSET) / static_cast<double>(CELL)));
-                    int gy = static_cast<int>(round((my - OFFSET) / static_cast<double>(CELL)));
+                    i16 gx = std::round((mouse->position.x - OFFSET) / static_cast<double>(CELL));
+                    i16 gy = std::round((mouse->position.y - OFFSET) / static_cast<double>(CELL));
 
-                    if (gx >= 0 && gx < SIZE && gy >= 0 && gy < SIZE && board[gy][gx] == 0)
+                    if (!winner)
                     {
-                        int c = blackTurn ? 1 : 2;
-                        board[gy][gx] = c;
-                        if (checkWin(gx, gy, c))
+                        if (gx >= 0 && gx < SIZE && gy >= 0 && gy < SIZE && board[gy][gx] == 0)
                         {
-                            gameOver = true;
+                            board[gy][gx] = turn;
+                            step_x[step_count] = gx;
+                            step_y[step_count] = gy;
+                            ++step_count;
+                            if (check_win(gx, gy, turn)) { winner = turn; }
+                            turn = turn == 1 ? 2 : 1;
                         }
-                        blackTurn = !blackTurn;
                     }
+
+                    if (gx == SIZE + 1)
+                    {
+                        // 重置
+                        if (gy == 2)
+                        {
+                            memset(board, 0, sizeof(board));
+                            memset(step_x, 0, sizeof(step_x));
+                            memset(step_y, 0, sizeof(step_y));
+                            step_count = 0;
+                            turn = 1;
+                            winner = 0;
+                        }
+
+                        // 撤销
+						if (gy == 4)
+						{
+                            if (step_count > 0)
+                            {
+                                --step_count;
+                                board[step_y[step_count]][step_x[step_count]] = 0;
+                                turn = turn == 1 ? 2 : 1;
+                                winner = 0;
+                            }
+						}
+
+                        // AI
+					    if (gy == 6 && !winner)
+						{
+                            sf::Vector2u ai_move = AI<SIZE>(board, turn);
+                            board[ai_move.y][ai_move.x] = turn;
+                            step_x[step_count] = ai_move.x;
+                            step_y[step_count] = ai_move.y;
+                            ++step_count;
+                            if (check_win(ai_move.x, ai_move.y, turn)) { winner = turn; }
+                            turn = turn == 1 ? 2 : 1;
+                        }
+                    }
+
+					if (step_count >= SIZE * SIZE) { winner = 3; } // 平局
                 }
             }
         }
 
-        win.clear(sf::Color(220, 180, 120));
+        draw_screen<SIZE, CELL, OFFSET>(window, board);
 
-        // 棋盘横线竖线
-        for (int i = 0;i < SIZE;i++)
+        auto mousePos = sf::Mouse::getPosition(window);
+        i16 gx = std::round((mousePos.x - OFFSET) / static_cast<double>(CELL));
+        i16 gy = std::round((mousePos.y - OFFSET) / static_cast<double>(CELL));
+        if (!winner && gx >= 0 && gx < SIZE && gy >= 0 && gy < SIZE && board[gy][gx] == 0)
         {
-            sf::Vertex hline[] = {
-                sf::Vertex(sf::Vector2f(OFFSET, OFFSET + static_cast<float>(i * CELL)), sf::Color::Black),
-                sf::Vertex(sf::Vector2f(OFFSET + static_cast<float>((SIZE - 1) * CELL), OFFSET + static_cast<float>(i * CELL)), sf::Color::Black)
-            };
-            win.draw(hline, 2, sf::PrimitiveType::Lines);
-
-            sf::Vertex vline[] = {
-                sf::Vertex(sf::Vector2f(OFFSET + static_cast<float>(i * CELL), OFFSET), sf::Color::Black),
-                sf::Vertex(sf::Vector2f(OFFSET + static_cast<float>(i * CELL), OFFSET + static_cast<float>((SIZE - 1) * CELL)), sf::Color::Black)
-            };
-            win.draw(vline, 2, sf::PrimitiveType::Lines);
+            draw_stone<CELL, OFFSET>(window, gx, gy, turn);
         }
 
-        // 绘制棋子
-        for (int y = 0;y < SIZE;y++)
+        if (winner)
         {
-            for (int x = 0;x < SIZE;x++)
-            {
-                if (board[y][x] == 0) continue;
-                sf::CircleShape piece(static_cast<float>(CELL) / 2.0f - 2.0f);
-                piece.setPosition(sf::Vector2f(
-                    static_cast<float>(OFFSET + x * CELL) - piece.getRadius(),
-                    static_cast<float>(OFFSET + y * CELL) - piece.getRadius()
-                ));
-                if (board[y][x] == 1)
-                    piece.setFillColor(sf::Color::Black);
-                else
-                    piece.setFillColor(sf::Color::White);
-                win.draw(piece);
-            }
+            draw_text(window, winner == 3 ? "Draw!" : winner == 1 ? "Black wins!" : "White wins!");
         }
-        win.display();
+
+        window.display();
     }
+
     return 0;
+}
+
+
+constexpr i16 dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
+bool check_win(i16 x, i16 y, ui8 color)
+{
+    for (auto& d : dirs)
+    {
+        ui8 cnt = 1, nx, ny;
+        i16 dx = d[0], dy = d[1];
+        for (ui8 i = 1; i < 5; ++i)
+        {
+            nx = x + dx * i;
+            ny = y + dy * i;
+            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
+            {
+                cnt++;
+            }
+            else { break; }
+        }
+        for (ui8 i = 1; i < 5; ++i)
+        {
+            nx = x - dx * i;
+            ny = y - dy * i;
+            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
+            {
+                cnt++;
+            }
+            else { break; }
+        }
+
+        if (cnt >= 5) { return true; }
+    }
+    return false;
 }
