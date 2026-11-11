@@ -22,7 +22,7 @@ public:
 
     const void call() const noexcept {
         PlaySoundA((A + name_ + E).c_str(), NULL, SND_FILENAME | SND_NODEFAULT);
-        // 文件格式自己看, 不一样就滚 //
+        // 文件格式自己看, 不一样或没有就不放 //
 
         cout << sound_ << '\n';
     }

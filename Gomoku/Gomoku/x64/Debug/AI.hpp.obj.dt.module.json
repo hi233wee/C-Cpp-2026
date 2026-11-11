@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Gomoku\\x64\\Debug\\AI.obj",
+            "outputs": [
+                "Gomoku\\x64\\Debug\\AI.hpp.obj.dt.module.json",
+                "Gomoku\\x64\\Debug\\AI.hpp.obj.dt.d.json"
+            ],
+            "requires": []
+        }
+    ]
+}

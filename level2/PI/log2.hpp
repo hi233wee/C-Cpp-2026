@@ -10,6 +10,3 @@ ui16 log2(ui64 n) {
     while (n >>= 1) { ++res; }
     return res;
 }
-
-#undef ui64
-#undef ui16

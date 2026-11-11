@@ -293,7 +293,3 @@ template<ui64 Precision> BigNum<Precision> make_BigNum(BigNum<Precision>&& a) {
     BigNum<Precision> tmp(a);
     return tmp;
 }
-
-#undef ui64
-#undef ui32
-#undef ui16

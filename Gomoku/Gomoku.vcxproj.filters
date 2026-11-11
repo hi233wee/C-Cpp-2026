@@ -13,10 +13,36 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="头文件\AI">
+      <UniqueIdentifier>{02276415-21be-408b-b60a-354e25c355d9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main_game.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="GUI.hpp">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="board_score.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TEXT.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AI.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="gen_moves.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="point_score.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="search.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

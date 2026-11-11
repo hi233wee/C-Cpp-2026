@@ -1,0 +1,58 @@
+﻿  GUI.hpp
+  main_game.cpp
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(46,28): warning C4244: “初始化”: 从“double”转换到“i16”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(47,28): warning C4244: “初始化”: 从“double”转换到“i16”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(108,16): warning C4244: “初始化”: 从“double”转换到“i16”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(109,16): warning C4244: “初始化”: 从“double”转换到“i16”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:         with
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:         [
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:             T=float
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:         ]
+  (编译源文件“main_game.cpp”)
+      D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72):
+      模板实例化上下文(最早的实例化上下文)为
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(105,9):
+          查看对正在编译的函数 模板 实例化“void draw_screen<15,36,32>(sf::RenderWindow &,cui8 (&)[15][15])”的引用
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(167,5):
+          查看对正在编译的函数 模板 实例化“void draw_line<15,36,32>(sf::RenderWindow &)”的引用
+  
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244:         with
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244:         [
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244:             T=float
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244:         ]
+  (编译源文件“main_game.cpp”)
+  
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(44,44): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(44,44): warning C4244:         with
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(44,44): warning C4244:         [
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(44,44): warning C4244:             T=float
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(44,44): warning C4244:         ]
+  (编译源文件“main_game.cpp”)
+  
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(45,44): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(45,44): warning C4244:         with
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(45,44): warning C4244:         [
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(45,44): warning C4244:             T=float
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(45,44): warning C4244:         ]
+  (编译源文件“main_game.cpp”)
+  
+D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\point_score.hpp(95,60): warning C4554: '<<': 检查运算符优先级可能存在的错误；使用括号阐明优先级
+  (编译源文件“main_game.cpp”)
+      D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\point_score.hpp(95,60):
+      模板实例化上下文(最早的实例化上下文)为
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(90,52):
+          查看对正在编译的函数 模板 实例化“sf::Vector2u AI<15>(ui8 (&)[15][15],ui16 (&)[225],ui16 (&)[225],ui16 &,cui8)”的引用
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\AI.hpp(21,10):
+          查看对正在编译的函数 模板 实例化“i16 gen_moves<15>(ui8 (&)[15][15],ui8,Move (&)[225],i16)”的引用
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\gen_moves.hpp(43,15):
+          查看对正在编译的函数 模板 实例化“i64 point_score<15>(ui8 (&)[15][15],i16,i16,ui8)”的引用
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\point_score.hpp(158,16):
+          查看对正在编译的函数 模板 实例化“Level line_level<15>(ui8 (&)[15][15],i16,i16,i16,i16,ui8)”的引用
+  
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 254 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  Gomoku.vcxproj -> D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\x64\Release\Gomoku.exe

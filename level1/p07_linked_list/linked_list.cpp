@@ -45,7 +45,7 @@ int main () {
     printf("请输入链表中元素的取值范围\n");
     printf("   下界: "); L=rd();
     printf("   上界: "); R=rd();
-    if (L>R) { printf("我真服了, 之后绝对运行出错"); }
+    if (L>R) { printf("我真服了, 你输的啥?"); return 0; }
     else { printf("你真棒! 我将会输出随机生成的链表\n"); }
     // 随机数 //
     random_device RD;
@@ -119,11 +119,13 @@ void Free (linked_list*& h) { //------------------------释放空间
 }
 
 void putn (const linked_list* i) { //-------------------输出整个链表
+    bool f=0;
     t =tt =0;
     while (i) {
+        f = 0;
         x = i->V;
 
-        if (x<0) { tmp[tt++]='-'; x =-x; }
+        if (x<0) { f=1; x =-x; }
         if (x==0) { tmp[tt++]='0'; }
 
         while (x) {
@@ -131,6 +133,7 @@ void putn (const linked_list* i) { //-------------------输出整个链表
             x /=10;
         }
 
+        if (f) { s[t++]='-'; }
         while (tt) { s[t++]=tmp[--tt]; }
         s[t++]='\n';
         if (t>7777700) {
@@ -164,7 +167,7 @@ LL rd () {
     if (c==EOF) { return 0; } // ai说有神秘原因会输入这个
     while (isdigit(c))
     { x = x*10 +c -48; c=getchar(); }
-    return x;
+    return f? -x : x;
 }
 // 控制台 //
 

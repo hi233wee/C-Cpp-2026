@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Gomoku.vcxproj" />
+  <Project Path="Gomoku.vcxproj" Id="d874946c-9728-4211-9147-4c43e7598494" />
 </Solution>
