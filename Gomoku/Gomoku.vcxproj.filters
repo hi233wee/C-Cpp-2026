@@ -27,6 +27,9 @@
     <ClCompile Include="board_score.hpp">
       <Filter>头文件\AI</Filter>
     </ClCompile>
+    <ClCompile Include="TIME.hpp">
+      <Filter>头文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TEXT.hpp">

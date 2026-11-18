@@ -44,6 +44,7 @@ struct things {
     LL n;
 }; //----------------------------物品
 vector<things> stock, tmp; //----库存, 临时
+void check_stock();
 void search (string name);
 void update (string name, LL n);
 static bool cmp(const things& a, const things& b);
@@ -85,6 +86,7 @@ int main () {
         set_color( 0, 7);
         return 0;
     }
+    check_stock();
 
     main_screen();
 
@@ -459,6 +461,18 @@ bool save () { //---------------------------------------保存
 }
 
 // 数据 //
+
+void check_stock() { //---------------------------------检查库存
+    for (auto i = stock.begin(); i != stock.end();) {
+        if (i->n <= 0)       { i = stock.erase(i); continue; }
+        if (i->name.empty()) { i = stock.erase(i); continue; }
+
+        while (i + 1 != stock.end() && i->name == (i + 1)->name) {
+            i = stock.erase(i + 1);
+        }
+        ++i;
+    }
+}
 
 void search (string name) { //--------------------------将搜索到的放入tmp
     tmp.clear(); // 不清等死

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "search.hpp"
+#include "TIME.hpp"
 
 // 点打分: point_score.hpp
 // 
@@ -14,38 +15,52 @@
 // 
 // 调参
 
-static constexpr ui8  AI_DEPTH = 8;
-static constexpr ui16 AI_LIMIT = 7;
+static constexpr ui8  AI_DEPTH = 77;
+static constexpr ui16 AI_LIMIT = 12;
+static constexpr ui16 AI_TIME  = 777 >> 1;
 
 template <cui16 SIZE>
 inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 {
 	// 一定要直接修改
+	timer_start();
 	Move list[SIZE * SIZE];
-	i16 n = gen_moves<SIZE, AI_LIMIT>(board, turn, list);
+	i16 n = gen_moves<SIZE>(board, turn, AI_LIMIT, list);
 	if (n <= 0) { return sf::Vector2u(0, 0); }
 
 	if (AI_DEPTH <= 0) { return sf::Vector2u(list[0].x, list[0].y); }
 
+	i64 eval  = eval_board<SIZE>(board, turn);
 	i16 besti = 0;
-	i64 bestv = -INF - AI_DEPTH;
 
-	for (i16 i = 0; i < n; ++i)
+	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深(控时)
 	{
-		board[list[i].y][list[i].x] = turn;
+		i16 tmpi = 0;
+		i64 tmpv = -INF - d;
 
-		if (check_win(list[i].x, list[i].y, turn))
+		for (i16 i = 0; i < n && now() <= AI_TIME; ++i)
 		{
+			board[list[i].y][list[i].x] = turn;
+
+			if (check_win(list[i].x, list[i].y, turn))
+			{
+				board[list[i].y][list[i].x] = 0;
+				return sf::Vector2u(list[i].x, list[i].y);
+			}
+			else
+			{
+				i64 v = -negamax<SIZE>(board, turn == 1 ? 2 : 1,
+					-INF, -tmpv, -eval - eval_point<SIZE>(board, list[i].x, list[i].y, turn),
+					d - 1);
+				if (v > tmpv) { tmpv = v; tmpi = i; }
+			}
+
 			board[list[i].y][list[i].x] = 0;
-			return sf::Vector2u(list[i].x, list[i].y);
 		}
-		else
-		{
-			i64 v = -negamax<SIZE, AI_LIMIT>(board, turn == 1 ? 2 : 1, -INF, INF, AI_DEPTH - 1);
-			if (v > bestv) { bestv = v; besti = i; }
-		}
+		if (now() > AI_TIME) { break; }
 
-		board[list[i].y][list[i].x] = 0;
+		besti = tmpi;
+		// std::swap(list[besti], list[0]);
 	}
 	return sf::Vector2u(list[besti].x, list[besti].y);
 }

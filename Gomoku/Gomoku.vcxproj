@@ -153,6 +153,7 @@
     <ClCompile Include="board_score.hpp" />
     <ClCompile Include="GUI.hpp" />
     <ClCompile Include="main_game.cpp" />
+    <ClCompile Include="TIME.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AI.hpp" />
