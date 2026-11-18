@@ -9,7 +9,7 @@ D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:       
   (编译源文件“main_game.cpp”)
       D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72):
       模板实例化上下文(最早的实例化上下文)为
-          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(105,9):
+          D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(106,9):
           查看对正在编译的函数 模板 实例化“void draw_screen<15,36,32>(sf::RenderWindow &,cui8 (&)[15][15])”的引用
           D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(167,5):
           查看对正在编译的函数 模板 实例化“void draw_line<15,36,32>(sf::RenderWindow &)”的引用

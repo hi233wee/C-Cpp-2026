@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "search.hpp"
-#include "TIME.hpp"
 
 // 点打分: point_score.hpp
 // 
@@ -13,34 +12,77 @@
 // 
 // 搜索: search.hpp
 // 
+// 哈希: hash.hpp
+// 
+// 置换表: tt.hpp
+// 
 // 调参
 
 static constexpr ui8  AI_DEPTH = 77;
 static constexpr ui16 AI_LIMIT = 12;
 static constexpr ui16 AI_TIME  = 777 >> 1;
 
+
+template <cui16 SIZE>
+inline void init_AI()
+{
+	init_zobrist<SIZE>();
+}
+
+inline std::mt19937_64& ai_rng()
+{
+	static std::mt19937_64 e(std::random_device{}());
+	return e;
+}
+
+template <cui16 SIZE>
+inline void shuffle_ties(Move* list, i16 n) // 打乱同分候选
+{
+	i16 i = 0;
+	while (i < n)
+	{
+		i16 j = i + 1;
+		while (j < n && list[j].score == list[i].score) { ++j; }
+
+		if (j - i > 1) { std::shuffle(list + i, list + j, ai_rng()); }
+		i = j;
+	}
+}
+
+
 template <cui16 SIZE>
 inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 {
 	// 一定要直接修改
-	timer_start();
+	timer_start<AI_TIME>();
 	Move list[SIZE * SIZE];
 	i16 n = gen_moves<SIZE>(board, turn, AI_LIMIT, list);
 	if (n <= 0) { return sf::Vector2u(0, 0); }
+	shuffle_ties<SIZE>(list, n);
 
 	if (AI_DEPTH <= 0) { return sf::Vector2u(list[0].x, list[0].y); }
 
 	i64 eval  = eval_board<SIZE>(board, turn);
+	ui64 key  = hash_board<SIZE>(board);
 	i16 besti = 0;
 
 	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深(控时)
 	{
+		if (TTEntry* entry = tt_probe(key); entry && entry->depth >= d)
+		{
+			if (entry->flag == TT_EXACT)
+			{
+				return sf::Vector2u(entry->mx, entry->my);
+			}
+		}
+
 		i16 tmpi = 0;
 		i64 tmpv = -INF - d;
 
-		for (i16 i = 0; i < n && now() <= AI_TIME; ++i)
+		for (i16 i = 0; i < n && intime(); ++i)
 		{
 			board[list[i].y][list[i].x] = turn;
+			key ^= g_z[turn - 1][list[i].y * SIZE + list[i].x];
 
 			if (check_win(list[i].x, list[i].y, turn))
 			{
@@ -50,17 +92,18 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 			else
 			{
 				i64 v = -negamax<SIZE>(board, turn == 1 ? 2 : 1,
-					-INF, -tmpv, -eval - eval_point<SIZE>(board, list[i].x, list[i].y, turn),
+					-INF, -tmpv,
+					-eval - eval_point<SIZE>(board, list[i].x, list[i].y, turn), key,
 					d - 1);
 				if (v > tmpv) { tmpv = v; tmpi = i; }
 			}
 
 			board[list[i].y][list[i].x] = 0;
+			key ^= g_z[turn - 1][list[i].y * SIZE + list[i].x];
 		}
-		if (now() > AI_TIME) { break; }
+		if (!intime()) { break; }
 
 		besti = tmpi;
-		// std::swap(list[besti], list[0]);
 	}
 	return sf::Vector2u(list[besti].x, list[besti].y);
 }
