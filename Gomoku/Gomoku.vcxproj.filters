@@ -47,5 +47,11 @@
     <ClInclude Include="search.hpp">
       <Filter>头文件\AI</Filter>
     </ClInclude>
+    <ClInclude Include="hash.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="tt.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

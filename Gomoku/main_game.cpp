@@ -31,6 +31,7 @@ int main()
 {
     sf::RenderWindow window = get_window< SIZE, CELL, OFFSET>();
 	load_font();
+    init_AI<SIZE>();
    
     while (window.isOpen())
     {
