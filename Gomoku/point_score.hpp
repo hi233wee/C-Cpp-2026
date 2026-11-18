@@ -141,9 +141,10 @@ constexpr i16 ps_dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
 template <cui16 SIZE>
 inline i64 eval_point(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, ui8 color)
 {
-    if (cell_at<SIZE>(board, x, y, color) != 0) return 0;     // 只给空点打分
+    if (cell_at<SIZE>(board, x, y, color) == 2) return 0;
+	bool has_stone = board[y][x];
 
-    board[y][x] = color;
+    if (!has_stone) { board[y][x] = color; }
 
     Level L[4];
     for (i16 d = 0; d < 4; ++d)
@@ -151,7 +152,7 @@ inline i64 eval_point(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, ui8 color)
         L[d] = line_level<SIZE>(board, x, y, ps_dirs[d][0], ps_dirs[d][1], color);
     }
 
-    board[y][x] = 0;
+    if (!has_stone) { board[y][x] = 0; }
 
     return combo_score(L);
 }

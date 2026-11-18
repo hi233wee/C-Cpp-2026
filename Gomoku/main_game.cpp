@@ -43,8 +43,8 @@ int main()
                 // 下棋
                 if (mouse->button == sf::Mouse::Button::Left)
                 {
-                    i16 gx = std::round((mouse->position.x - OFFSET) / static_cast<double>(CELL));
-                    i16 gy = std::round((mouse->position.y - OFFSET) / static_cast<double>(CELL));
+                    i16 gx = static_cast<i16>(std::round((mouse->position.x - OFFSET) / static_cast<double>(CELL)));
+                    i16 gy = static_cast<i16>(std::round((mouse->position.y - OFFSET) / static_cast<double>(CELL)));
 
                     if (!winner)
                     {
@@ -105,8 +105,8 @@ int main()
         draw_screen<SIZE, CELL, OFFSET>(window, board);
 
         auto mousePos = sf::Mouse::getPosition(window);
-        i16 gx = std::round((mousePos.x - OFFSET) / static_cast<double>(CELL));
-        i16 gy = std::round((mousePos.y - OFFSET) / static_cast<double>(CELL));
+        i16 gx = static_cast<i16>(std::round((mousePos.x - OFFSET) / static_cast<double>(CELL)));
+        i16 gy = static_cast<i16>(std::round((mousePos.y - OFFSET) / static_cast<double>(CELL)));
         if (!winner && gx >= 0 && gx < SIZE && gy >= 0 && gy < SIZE && board[gy][gx] == 0)
         {
             draw_stone<CELL, OFFSET>(window, gx, gy, turn);

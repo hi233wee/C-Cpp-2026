@@ -2,12 +2,17 @@
 
 #include "point_score.hpp"
 
+constexpr double Mine_W = 1.0;
+constexpr double  Opp_W = 0.7;
+
+
 // 候选点
 struct Move
 {
 	i16 x;
 	i16 y;
 	i64 score;
+	Move() : x(0), y(0), score(0) {}
 };
 
 
@@ -28,8 +33,8 @@ inline bool near_stone(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, i16 r = 2)
 
 
 // 候选点  我的收益 + 他的收益  只搜索前 limit 个
-template <cui16 SIZE, cui16 limit = 7>
-inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, Move (&out)[SIZE * SIZE])
+template <cui16 SIZE>
+inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, cui16 limit, Move (&out)[SIZE * SIZE])
 {
 	i16 n = 0;
 
@@ -44,9 +49,9 @@ inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, Move (&out)[SIZE * SIZE])
 			i64 opp  = eval_point<SIZE>(board, x, y, me == 1 ? 2 : 1);
 
 			i64 s;
-			if (mine >= S_5)     s = S_5 * 3;		// 我能成五,最高优先
-			else if (opp >= S_5) s = S_5 * 2;		// 必须堵
-			else                 s = mine + opp;
+			if (mine >= S_5)     s = S_5 << 1;		// 我能成五
+			else if (opp >= S_5) s = S_5;
+			else                 s = static_cast<i64>(mine * Mine_W + opp * Opp_W);
 
 			out[n].x = x;
 			out[n].y = y;
