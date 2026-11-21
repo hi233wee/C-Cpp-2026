@@ -86,7 +86,7 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 				i64 v = -negamax<SIZE>(board, turn == 1 ? 2 : 1,
 					-INF, -tmpv,
 					-eval - list[i].my_score, key,
-					d - 1);
+					d - 1, 1);
 				if (v > tmpv) { tmpv = v; tmpi = i; }
 			}
 

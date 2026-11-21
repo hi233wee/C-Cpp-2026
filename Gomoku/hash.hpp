@@ -15,7 +15,7 @@ inline void init_zobrist()
 {
 	g_z[0] = new ui64[SIZE * SIZE];
 	g_z[1] = new ui64[SIZE * SIZE];
-	std::mt19937_64 rng(7777777);
+	std::mt19937_64 rng(7777777); // 没有问题, 放心使用
 
 	for (i16 y = 0; y < SIZE; ++y)
 		for (i16 x = 0; x < SIZE; ++x)

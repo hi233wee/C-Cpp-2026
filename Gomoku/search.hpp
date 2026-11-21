@@ -10,7 +10,7 @@ constexpr i64 INF = LLONG_MAX >> 2;
 
 
 template <cui16 SIZE>
-inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eval, ui64 key, ui8 depth)
+inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eval, ui64 key, ui8 depth, ui8 ply)
 {
 	if (depth == 0) { return eval; }
 
@@ -28,7 +28,7 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 	i16 n = gen_moves<SIZE>(board, me, depth + 2, list);
 	if (n <= 0) { return 0; }
 
-	i64 bestv = -INF - depth;
+	i64 bestv = -INF + ply;
 	i64 besti = 0;
 	bool nobigger = true;
 
@@ -40,13 +40,13 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 		if (check_win(list[i].x, list[i].y, me))
 		{
 			board[list[i].y][list[i].x] = 0;
-			return INF + depth;	// 早点赢好
+			return INF - ply;	// 早点赢好
 		}
 
 		i64 v = -negamax<SIZE>(board, me == 1 ? 2 : 1,
 			-beta, -alpha,
 			-eval - list[i].my_score, key,
-			depth - 1);
+			depth - 1, ply + 1);
 
 		board[list[i].y][list[i].x] = 0;
 		key ^= g_z[me - 1][list[i].y * SIZE + list[i].x];

@@ -10,9 +10,9 @@ D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72): warning C4244:       
       D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(38,72):
       模板实例化上下文(最早的实例化上下文)为
           D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\main_game.cpp(106,9):
-          查看对正在编译的函数 模板 实例化“void draw_screen<15,36,32>(sf::RenderWindow &,cui8 (&)[15][15])”的引用
+          请参阅正在编译的函数 模板 实例化或专用化“void draw_screen<15,36,32>(sf::RenderWindow &,cui8 (&)[15][15])”的引用
           D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(167,5):
-          查看对正在编译的函数 模板 实例化“void draw_line<15,36,32>(sf::RenderWindow &)”的引用
+          请参阅正在编译的函数 模板 实例化或专用化“void draw_line<15,36,32>(sf::RenderWindow &)”的引用
   
 D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244: “参数”: 从“int”转换到“T”，可能丢失数据
 D:\0code\C++\Aclass_task\C-Cpp-2026\Gomoku\GUI.hpp(39,72): warning C4244:         with

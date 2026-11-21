@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Gomoku\\x64\\Release\\tt.obj",
+            "outputs": [
+                "Gomoku\\x64\\Release\\tt.hpp.obj.dt.module.json",
+                "Gomoku\\x64\\Release\\tt.hpp.obj.dt.d.json"
+            ],
+            "requires": []
+        }
+    ]
+}
