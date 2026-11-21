@@ -9,10 +9,10 @@ constexpr double  Opp_W = 0.7;
 // 候选点
 struct Move
 {
-	i16 x;
-	i16 y;
-	i64 score;
-	Move() : x(0), y(0), score(0) {}
+	i16 x = 0;
+	i16 y = 0;
+	i64 score = 0;
+	i64 my_score = 0;
 };
 
 
@@ -49,13 +49,13 @@ inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, cui16 limit, Move (&out)[
 			i64 opp  = eval_point<SIZE>(board, x, y, me == 1 ? 2 : 1);
 
 			i64 s;
-			if (mine >= S_5)     s = S_5 << 1;		// 我能成五
-			else if (opp >= S_5) s = S_5;
+			if (mine >= S_5)     s = S_5 << 7;		// 我能成五
 			else                 s = static_cast<i64>(mine * Mine_W + opp * Opp_W);
 
 			out[n].x = x;
 			out[n].y = y;
 			out[n].score = s;
+			out[n].my_score = mine;
 			++n;
 		}
 	}
@@ -67,7 +67,6 @@ inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, cui16 limit, Move (&out)[
 		{
 			out[0].x = cx;
 			out[0].y = cy;
-			out[0].score = 0;
 			return 1;
 		}
 		return 0;

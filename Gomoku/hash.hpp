@@ -23,13 +23,13 @@ inline void init_zobrist()
 				g_z[c][y * SIZE + x] = rng();
 }
 
-
-// 落子和撤销用同一个数, 异或两次自动复原
+/*
+// 异或两次复原
 template <cui16 SIZE>
 inline void hash_toggle(ui64& h, i16 x, i16 y, ui8 color)
 {
 	h ^= g_z[color - 1][y * SIZE + x]; // 黑 0, 白 1
-}
+}*/
 
 
 // 只在开局或校验时用
@@ -39,6 +39,6 @@ inline ui64 hash_board(ui8 (&board)[SIZE][SIZE])
     ui64 h = 0;
     for (i16 y = 0; y < SIZE; ++y)
         for (i16 x = 0; x < SIZE; ++x)
-            if (board[y][x]) { hash_toggle<SIZE>(h, x, y, board[y][x]); }
+			if (board[y][x]) { h ^= g_z[board[y][x] - 1][y * SIZE + x]; }
     return h;
 }

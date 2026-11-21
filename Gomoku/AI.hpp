@@ -53,29 +53,21 @@ inline void shuffle_ties(Move* list, i16 n) // 打乱同分候选
 template <cui16 SIZE>
 inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 {
-	// 一定要直接修改
 	timer_start<AI_TIME>();
+
 	Move list[SIZE * SIZE];
 	i16 n = gen_moves<SIZE>(board, turn, AI_LIMIT, list);
 	if (n <= 0) { return sf::Vector2u(0, 0); }
 	shuffle_ties<SIZE>(list, n);
 
-	if (AI_DEPTH <= 0) { return sf::Vector2u(list[0].x, list[0].y); }
+	// if (AI_DEPTH <= 0) { return sf::Vector2u(list[0].x, list[0].y); }
 
 	i64 eval  = eval_board<SIZE>(board, turn);
 	ui64 key  = hash_board<SIZE>(board);
 	i16 besti = 0;
 
-	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深(控时)
+	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深方便控时
 	{
-		if (TTEntry* entry = tt_probe(key); entry && entry->depth >= d)
-		{
-			if (entry->flag == TT_EXACT)
-			{
-				return sf::Vector2u(entry->mx, entry->my);
-			}
-		}
-
 		i16 tmpi = 0;
 		i64 tmpv = -INF - d;
 
@@ -93,7 +85,7 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 			{
 				i64 v = -negamax<SIZE>(board, turn == 1 ? 2 : 1,
 					-INF, -tmpv,
-					-eval - eval_point<SIZE>(board, list[i].x, list[i].y, turn), key,
+					-eval - list[i].my_score, key,
 					d - 1);
 				if (v > tmpv) { tmpv = v; tmpi = i; }
 			}
@@ -101,9 +93,11 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 			board[list[i].y][list[i].x] = 0;
 			key ^= g_z[turn - 1][list[i].y * SIZE + list[i].x];
 		}
-		if (!intime()) { break; }
+		if (!intime()) { break; } // 不用 over_time()
 
 		besti = tmpi;
+		tt_store(TTEntry{ key, tmpv, d, list[besti].x, list[besti].y, TT_EXACT });
 	}
+
 	return sf::Vector2u(list[besti].x, list[besti].y);
 }
