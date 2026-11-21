@@ -60,7 +60,7 @@ int main()
                         }
                     }
 
-                    if (gx == SIZE + 1)
+                    if (gx == SIZE + 1) // 大概率不改界面了
                     {
                         // 重置
                         if (gy == 2)
