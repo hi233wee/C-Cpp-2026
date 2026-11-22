@@ -3,7 +3,7 @@
 #include "point_score.hpp"
 
 constexpr double Mine_W = 1.0;
-constexpr double  Opp_W = 0.7;
+constexpr double  Opp_W = 0.9; // 暂时先这样
 
 
 // 候选点
@@ -60,10 +60,10 @@ inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, cui16 limit, Move (&out)[
 		}
 	}
 
-	if (n == 0)										// 空盘:下天元
+	if (n == 0)
 	{
 		i16 cx = SIZE / 2, cy = SIZE / 2;
-		if (board[cy][cx] == 0)
+		if (board[cy][cx] == 0)						// 空盘:下天元
 		{
 			out[0].x = cx;
 			out[0].y = cy;
@@ -91,3 +91,5 @@ inline i16 gen_moves(ui8 (&board)[SIZE][SIZE], ui8 me, cui16 limit, Move (&out)[
 
 	return keep;
 }
+// 下一次改, 智能判断留多少, 可以每层留固定比例
+//			再加根据搜索层数留比例

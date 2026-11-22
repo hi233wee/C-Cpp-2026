@@ -14,19 +14,28 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 {
 	if (depth == 0) { return eval; }
 
+	Move list[SIZE * SIZE];
+	i16 n = gen_moves<SIZE>(board, me, depth + 2, list);
+	if (n <= 0) { return 0; }
+
 	if (TTEntry* entry = tt_probe(key); entry && entry->depth >= depth)
 	{
 		if (entry->flag == TT_EXACT) { return entry->score; }
 		if (entry->flag == TT_LOWER) { alpha = std::max(alpha, entry->score); }
 		if (entry->flag == TT_UPPER) {  beta = std::min( beta, entry->score); }
 		if (alpha >= beta) { return entry->score; }
+
+		for (i16 i = 0; i < n; ++i)
+		{
+			if (list[i].x == entry->mx && list[i].y == entry->my)
+			{
+				std::swap(list[0], list[i]);
+				break;
+			}
+		}
 	}
 
 	if (over_time()) { return 0; }
-	
-	Move list[SIZE * SIZE];
-	i16 n = gen_moves<SIZE>(board, me, depth + 2, list);
-	if (n <= 0) { return 0; }
 
 	i64 bestv = -INF + ply;
 	i64 besti = 0;

@@ -17,7 +17,7 @@ inline i64 eval_board(ui8(&board)[SIZE][SIZE], ui8 me)
             if (!c) continue;
 
             sc[c] += eval_point<SIZE>(board, x, y, c);
-            // 为了方便局面分传递
+            // 家人们不好了, 这里出问题了, 后加的点不会更新前面的点分
         }
     return sc[me] - sc[me == 1 ? 2 : 1];
 }

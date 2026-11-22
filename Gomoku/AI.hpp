@@ -16,11 +16,13 @@
 // 
 // 置换表: tt.hpp
 // 
+// 开局库: 
+// 
 // 调参
 
 static constexpr ui8  AI_DEPTH = 77;
-static constexpr ui16 AI_LIMIT = 12;
-static constexpr ui16 AI_TIME  = 777 >> 1;
+static constexpr ui16 AI_LIMIT = 17;
+static constexpr ui16 AI_TIME  = 777;
 
 
 template <cui16 SIZE>
@@ -64,10 +66,21 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 
 	i64 eval  = eval_board<SIZE>(board, turn);
 	ui64 key  = hash_board<SIZE>(board);
-	i16 besti = 0;
 
 	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深方便控时
 	{
+		if (TTEntry* entry = tt_probe(key); entry && entry->depth >= d)
+		{
+			for (i16 i = 0; i < n; ++i)
+			{
+				if (list[i].x == entry->mx && list[i].y == entry->my)
+				{
+					std::swap(list[0], list[i]);
+					break;
+				}
+			}
+		}
+
 		i16 tmpi = 0;
 		i64 tmpv = -INF - d;
 
@@ -95,9 +108,11 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 		}
 		if (!intime()) { break; } // 不用 over_time()
 
-		besti = tmpi;
-		tt_store(TTEntry{ key, tmpv, d, list[besti].x, list[besti].y, TT_EXACT });
+		std::swap(list[0], list[tmpi]);
+
+		tt_store(TTEntry{ key, tmpv, d, list[0].x, list[0].y, TT_EXACT });
 	}
 
-	return sf::Vector2u(list[besti].x, list[besti].y);
+	return sf::Vector2u(list[0].x, list[0].y); // 最佳都被换到 0
 }
+// 还要加开局库

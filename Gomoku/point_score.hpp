@@ -14,29 +14,33 @@ typedef const unsigned short int cui16;
 // 棋型等级
 enum Level
 {
-    LV_NONE, LV_S2, LV_O2, LV_S3, LV_O3, LV_S4, LV_O4, LV_5
+    LV_NONE = 0,
+    LV_JJO2, LV_JO2, LV_CO2,         // 跳两格 / 跳一格 / 连
+    LV_S3,                           // 眠三 (不分跳连)
+    LV_JO3, LV_CO3,                  // 跳活三 / 连活三
+    LV_S4,  LV_O4,  LV_5
 };
 
-constexpr i64 S_5    = 7'777'777'777;   // 五连
-constexpr i64 S_O4   =    77'777'777;   // 活四
-constexpr i64 S_S4S4 =    77'777'777;   // 双眠四
-constexpr i64 S_S4O3 =    37'777'777;   // 眠四活三
-constexpr i64 S_O3O3 =    37'777'777;   // 双活三
-constexpr i64 S_S4S3 =       397'777;   // 眠四眠三
-constexpr i64 S_S42  =       237'777;   // 眠四二
-constexpr i64 S_S4   =       157'777;   // 冲(眠)四
-constexpr i64 S_O3S3 =        37'777;   // 活三眠三
-constexpr i64 S_O32  =        22'777;   // 活三二
-constexpr i64 S_O3   =        15'777;   // 活三
-constexpr i64 S_S3S3 =         3'777;   // 双眠三
-constexpr i64 S_S3O2 =         2'277;   // 眠三活二
-constexpr i64 S_O2O2 =         1'577;   // 双活二
-constexpr i64 S_O2S2 =         1'177;   // 活二眠二
-constexpr i64 S_S3   =           777;   // 眠三
-constexpr i64 S_O2   =           117;   // 活二
-constexpr i64 S_S2S2 =            37;   // 双眠二
-constexpr i64 S_S2   =             7;   // 眠二
-
+constexpr i64 S_5    = 77'777'777'777;   // 五连       // 直接赢
+constexpr i64 S_O4   =  7'777'777'777;   // 活四       // 一强
+constexpr i64 S_S4S4 =  7'777'777'777;   // 双眠四     // 一强
+constexpr i64 S_S4O3 =     77'777'777;   // 眠四活三   // 先中后强
+constexpr i64 S_O3O3 =     17'777'777;   // 双活三     // 先弱后强
+constexpr i64 S_S4S3 =      3'777'777;   // 眠四眠三   // 先中后中
+constexpr i64 S_S4O2 =      1'777'777;   // 眠四活二   // 先中后弱
+constexpr i64 S_S4   =        777'777;   // 冲(眠)四   // 一中
+constexpr i64 S_O3S3 =         77'777;   // 活三眠三   // 先弱后中
+constexpr i64 S_O3O2 =         37'777;   // 活三活二   // 先弱后弱
+constexpr i64 S_CO3  =          7'777;   // 连活三     // 一弱
+constexpr i64 S_JO3  =          6'777;   // 跳活三     // 一弱
+constexpr i64 S_S3S3 =          3'777;   // 双眠三     // 后置两中
+constexpr i64 S_S3O2 =          1'777;   // 眠三活二   // 后置一中一弱
+constexpr i64 S_S3   =            377;   // 眠三       // 后置一中攻
+constexpr i64 S_O2O2 =            177;   // 双活二     // 后置两弱
+constexpr i64 S_CO2  =             37;   // 连活二     // 后置一弱攻
+constexpr i64 S_JO2  =             17;   // 跳一格的活二
+constexpr i64 S_JJO2 =              7;   // 跳两格的活二
+// 强不可打断, 先中可被 中+堵 打断, 弱可被中打断
 
 // 0 空 , 1 我方 , 2 敌方或越界
 template <cui16 SIZE>
@@ -74,10 +78,32 @@ inline Level line_level(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, i16 dx, i16 dy, 
 		if (cnt == 5 && (windows[i] == 1) ^ (windows[i + 5] == 1)) { return LV_5; }
         if (cnt == 5) { best = std::max(best, LV_S4); goto Slide; }
 
-        if (windows[i] && windows[i + 5]) { goto Slide; } // 自己想为什么跳过
-
-        best = std::max(best,
-            static_cast<Level>((((cnt - 2) << 1) | 1) + (!windows[i] && !windows[i + 5])));
+        if (windows[i] || windows[i + 5])
+        {
+            if (windows[i] == windows[i + 5]) { goto Slide; }
+            // 两头堵是死
+            // 两头都是自己的
+            // 不是空得太多
+            // 就是是四, 在其他窗口有判断
+            else if (cnt == 4) { best = std::max(best, LV_S4); }
+            else if (cnt == 3) { best = std::max(best, LV_S3); }
+            // 一端有自己的也算
+        }
+        else
+        {
+            if (cnt == 4) { best = std::max(best, LV_O4); }
+            else if (cnt == 3) {
+                best = std::max(best,
+                    (windows[i + 1] == 1) && (windows[i + 4] == 1) ? LV_JO3 : LV_CO3);
+            }
+            else if (cnt == 2)
+            {
+                     if (windows[i + 1] == 1 && windows[i + 4] == 1) { best = std::max(best, LV_JJO2); }
+                else if (windows[i + 1] == 1 && windows[i + 2] == 1) { best = std::max(best, LV_CO2 ); }
+                else if (windows[i + 3] == 1 && windows[i + 4] == 1) { best = std::max(best, LV_CO2 ); }
+                else { best = std::max(best, LV_JO2); }
+            }
+        }
 
     Slide:
 		if (i == 3) { break; }
@@ -93,19 +119,21 @@ inline Level line_level(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, i16 dx, i16 dy, 
 // 四个方向组合
 inline i64 combo_score(const Level (&L)[4])
 {
-    i16 n4 = 0, n4o = 0, n3o = 0, n3s = 0, n2o = 0, n2s = 0;
+    i16 n4s = 0, n4o = 0, n3o = 0, n3c = 0, n3s = 0, n2o = 0, n2c = 0, n2j = 0;
 
     for (i16 d = 0; d < 4; ++d)
     {
         switch (L[d])
         {
-        case LV_5:   return S_5;
-        case LV_O4:  ++n4; ++n4o; break;
-        case LV_S4:  ++n4;  break;
-        case LV_O3:  ++n3o; break;
-        case LV_S3:  ++n3s; break;
-        case LV_O2:  ++n2o; break;
-        case LV_S2:  ++n2s; break;
+        case LV_5:    return S_5;
+        case LV_O4:   ++n4s; ++n4o; break;
+        case LV_S4:   ++n4s; break;
+        case LV_CO3:  ++n3o; ++n3c; break;
+        case LV_JO3:  ++n3o; break;
+        case LV_S3:   ++n3s; break;
+        case LV_CO2:  ++n2o; ++n2c; break;
+        case LV_JO2:  ++n2o; ++n2j; break;
+        case LV_JJO2: ++n2o; break;
         default:     break;
         }
     }
@@ -113,24 +141,24 @@ inline i64 combo_score(const Level (&L)[4])
     i64 best = 0;
     auto up = [&best](i64 v) { if (v > best) best = v; };
 
-    if (n4o >= 1)             up(S_O4);             // 活四
-    if (n4  >= 2)             up(S_S4S4);           // 双眠四
-    if (n4  >= 1 && n3o >= 1) up(S_S4O3);           // 眠四活三
+    if (n4o >= 1)             up(S_O4  );           // 活四
+    if (n4s >= 2)             up(S_S4S4);           // 双眠四
+    if (n4s >= 1 && n3o >= 1) up(S_S4O3);           // 眠四活三
     if (n3o >= 2)             up(S_O3O3);           // 双活三
-    if (n4  >= 1 && n3s >= 1) up(S_S4S3);           // 眠四眠三
-    if (n4  >= 1 && n2o >= 1) up(S_S42);            // 眠四二
-    if (n4  >= 1)             up(S_S4);             // 冲四
+    if (n4s >= 1 && n3s >= 1) up(S_S4S3);           // 眠四眠三
+    if (n4s >= 1 && n2o >= 1) up(S_S4O2);           // 眠四活二
+    if (n4s >= 1)             up(S_S4  );           // 冲(眠)四
     if (n3o >= 1 && n3s >= 1) up(S_O3S3);           // 活三眠三
-    if (n3o >= 1 && n2o >= 1) up(S_O32);            // 活三二
-    if (n3o >= 1)             up(S_O3);             // 活三
+    if (n3o >= 1 && n2o >= 1) up(S_O3O2);           // 活三活二
+	if (n3c >= 1)             up(S_CO3 );           // 连活三
+    if (n3o >= 1)             up(S_JO3 );           // 跳活三
     if (n3s >= 2)             up(S_S3S3);           // 双眠三
     if (n3s >= 1 && n2o >= 1) up(S_S3O2);           // 眠三活二
     if (n2o >= 2)             up(S_O2O2);           // 双活二
-    if (n2o >= 1 && n2s >= 1) up(S_O2S2);           // 活二眠二
-    if (n3s >= 1)             up(S_S3);             // 眠三
-    if (n2o >= 1)             up(S_O2);             // 活二
-    if (n2s >= 2)             up(S_S2S2);           // 双眠二
-    if (n2s >= 1)             up(S_S2);             // 眠二
+    if (n3s >= 1)             up(S_S3  );           // 眠三
+	if (n2c >= 1)             up(S_CO2 );           // 连活二
+    if (n2j >= 1)             up(S_JO2 );           // 跳一格的活二
+    if (n2o >= 1)             up(S_JJO2);           // 跳两格的活二
 
     return best;
 }
