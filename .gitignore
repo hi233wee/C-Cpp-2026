@@ -1,16 +1,21 @@
-# Operating system metadata
+# ============================================================
+# 只提交源码 + 资源文件，不提交编译产物 / IDE 本地状态
+# ============================================================
+
+# ---------- 操作系统 ----------
 .DS_Store
 ._*
 Thumbs.db
 Desktop.ini
 
-# Local IDE settings
+# ---------- IDE 本地状态 ----------
 .idea/
 .vs/
 *.user
 *.suo
+*.aps
 
-# CMake build directories and generated files
+# ---------- CLion / CMake 构建输出 ----------
 build/
 cmake-build-*/
 CMakeFiles/
@@ -23,7 +28,18 @@ build.ninja
 .ninja_deps
 .ninja_log
 
-# Compiled binaries, libraries, and debug symbols
+# ---------- Visual Studio 构建输出 ----------
+# 整个中间/输出目录忽略：里面是 tlog、obj、idb、复制过去的字体等
+/Gomoku/x64/
+/Gomoku/Gomoku/x64/
+*.tlog
+*.lastbuildstate
+*.recipe
+*.iobj
+*.ipdb
+*.idb
+
+# ---------- 编译产物 ----------
 main
 *.o
 *.obj
@@ -39,7 +55,7 @@ main
 *.ilk
 *.dSYM/
 
-# Editor temporary files
+# ---------- 编辑器临时文件 ----------
 *.swp
 *.swo
 *~
