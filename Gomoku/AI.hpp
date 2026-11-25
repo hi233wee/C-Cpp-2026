@@ -16,8 +16,6 @@
 // 
 // 置换表: tt.hpp
 // 
-// 开局库: 
-// 
 // 调参
 
 static constexpr ui8  AI_DEPTH = 77;
@@ -29,6 +27,8 @@ template <cui16 SIZE>
 inline void init_AI()
 {
 	init_zobrist<SIZE>();
+	init_levels<SIZE>();
+	init_vals<SIZE>();
 }
 
 inline std::mt19937_64& ai_rng()
@@ -53,23 +53,23 @@ inline void shuffle_ties(Move* list, i16 n) // 打乱同分候选
 
 
 template <cui16 SIZE>
-inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
+inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 me)
 {
 	timer_start<AI_TIME>();
 
 	Move list[SIZE * SIZE];
-	i16 n = gen_moves<SIZE>(board, turn, AI_LIMIT, list);
+	i16 n = gen_moves<SIZE>(board, me, AI_LIMIT, list);
 	if (n <= 0) { return sf::Vector2u(0, 0); }
 	shuffle_ties<SIZE>(list, n);
 
 	// if (AI_DEPTH <= 0) { return sf::Vector2u(list[0].x, list[0].y); }
 
-	i64 eval  = eval_board<SIZE>(board, turn);
-	ui64 key  = hash_board<SIZE>(board);
+	eval_board<SIZE>(board, me);
+	hash_board<SIZE>(board);
 
 	for (ui8 d = 2; d <= AI_DEPTH; d += 2) // 迭代加深方便控时
 	{
-		if (TTEntry* entry = tt_probe(key); entry && entry->depth >= d)
+		if (TTEntry* entry = tt_probe(g_key); entry && entry->depth >= d)
 		{
 			for (i16 i = 0; i < n; ++i)
 			{
@@ -86,33 +86,33 @@ inline sf::Vector2u AI(ui8 (&board)[SIZE][SIZE], cui8 turn)
 
 		for (i16 i = 0; i < n && intime(); ++i)
 		{
-			board[list[i].y][list[i].x] = turn;
-			key ^= g_z[turn - 1][list[i].y * SIZE + list[i].x];
+			do_move<SIZE>(board, list[i].x, list[i].y, me);
 
-			if (check_win(list[i].x, list[i].y, turn))
+			if (check_win(list[i].x, list[i].y, me))
 			{
 				board[list[i].y][list[i].x] = 0;
 				return sf::Vector2u(list[i].x, list[i].y);
 			}
 			else
 			{
-				i64 v = -negamax<SIZE>(board, turn == 1 ? 2 : 1,
-					-INF, -tmpv,
-					-eval - list[i].my_score, key,
-					d - 1, 1);
+				i64 v = -negamax<SIZE>(board, me == 1 ? 2 : 1,
+					-INF, -tmpv, d - 1, 1);
 				if (v > tmpv) { tmpv = v; tmpi = i; }
 			}
 
-			board[list[i].y][list[i].x] = 0;
-			key ^= g_z[turn - 1][list[i].y * SIZE + list[i].x];
+			undo_move<SIZE>(board, list[i].x, list[i].y, me);
 		}
 		if (!intime()) { break; } // 不用 over_time()
 
 		std::swap(list[0], list[tmpi]);
 
-		tt_store(TTEntry{ key, tmpv, d, list[0].x, list[0].y, TT_EXACT });
+		tt_store(TTEntry{ g_key, tmpv, d, list[0].x, list[0].y, TT_EXACT });
 	}
 
 	return sf::Vector2u(list[0].x, list[0].y); // 最佳都被换到 0
 }
-// 还要加开局库
+// 待办 (按投入产出排):
+//   1. VCF: 只搜"冲四 -> 必应"这条强制线, 能穿 20~30 步, 补深度不够的洞
+//   3. PVS: 第一个候选全窗口, 后面先用空窗口试探, 不行再重搜, 快 20~30%
+//   4. 杀手着法: 每层记两手造成剪枝的着法, 优先搜; 和 TT 互补 (TT 记局面, 它记深度)
+//   5. 候选宽度: 前 N 名 + 所有能成三的点, 别让必胜手被截断

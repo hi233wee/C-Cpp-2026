@@ -53,5 +53,8 @@
     <ClInclude Include="tt.hpp">
       <Filter>头文件\AI</Filter>
     </ClInclude>
+    <ClInclude Include="try_move.hpp">
+      <Filter>头文件\AI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -162,6 +162,7 @@
     <ClInclude Include="search.hpp" />
     <ClInclude Include="point_score.hpp" />
     <ClInclude Include="TEXT.hpp" />
+    <ClInclude Include="try_move.hpp" />
     <ClInclude Include="tt.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

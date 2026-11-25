@@ -9,7 +9,7 @@ typedef unsigned short int ui16;
 typedef const unsigned char cui8;
 typedef const unsigned short int cui16;
 
-bool check_win(i16 x, i16 y, ui8 color); // 有人要用
+bool check_win(i16 x, i16 y, ui8 me); // 有人要用
 
 #include "GUI.hpp"
 #include "TEXT.hpp"
@@ -126,7 +126,7 @@ int main()
 
 
 constexpr i16 dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
-bool check_win(i16 x, i16 y, ui8 color)
+bool check_win(i16 x, i16 y, ui8 me)
 {
     for (auto& d : dirs)
     {
@@ -136,7 +136,7 @@ bool check_win(i16 x, i16 y, ui8 color)
         {
             nx = x + dx * i;
             ny = y + dy * i;
-            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
+            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == me)
             {
                 cnt++;
             }
@@ -146,7 +146,7 @@ bool check_win(i16 x, i16 y, ui8 color)
         {
             nx = x - dx * i;
             ny = y - dy * i;
-            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == color)
+            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && board[ny][nx] == me)
             {
                 cnt++;
             }

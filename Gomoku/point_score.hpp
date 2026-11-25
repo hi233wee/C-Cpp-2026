@@ -10,7 +10,6 @@ typedef unsigned short int ui16;
 typedef const unsigned char cui8;
 typedef const unsigned short int cui16;
 
-
 // 棋型等级
 enum Level
 {
@@ -42,12 +41,56 @@ constexpr i64 S_JO2  =             17;   // 跳一格的活二
 constexpr i64 S_JJO2 =              7;   // 跳两格的活二
 // 强不可打断, 先中可被 中+堵 打断, 弱可被中打断
 
+
+inline Level* g_levels[4] = { nullptr };
+
+template <cui16 SIZE>
+inline void init_levels()
+{
+    for (ui8 i = 0; i < 4; ++i) { g_levels[i] = new Level[SIZE * SIZE](); }
+}
+
 // 0 空 , 1 我方 , 2 敌方或越界
 template <cui16 SIZE>
 inline ui8 cell_at(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, ui8 me)
 {
     if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return 2;
     return board[y][x] == 0 ? 0 : (board[y][x] == me ? 1 : 2);
+}
+
+
+inline Level enlevel(ui8* window, i16 bad, i16 cnt)
+{
+    if (bad || cnt < 2) { return LV_NONE; }
+    if (cnt == 5 && (window[0] == 1) ^ (window[5] == 1)) { return LV_5; }
+    if (cnt == 5) { return LV_S4; }
+
+    if (window[0] || window[5])
+    {
+        if (window[0] == window[5]) { return LV_NONE; }
+        // 两头堵是死
+        // 两头都是自己的
+        // 不是空得太多
+        // 就是是四, 在其他窗口有判断
+        else if (cnt == 4) { return LV_S4; }
+        else if (cnt == 3) { return LV_S3; }
+        // 一端有自己的也算
+    }
+    else
+    {
+        if (cnt == 4) { return LV_O4; }
+        else if (cnt == 3) {
+            return (window[1] == 1) && (window[4] == 1) ? LV_JO3 : LV_CO3;
+        }
+        else if (cnt == 2)
+        {
+                 if (window[1] == 1 && window[4] == 1) { return LV_JJO2; }
+            else if (window[1] == 1 && window[2] == 1) { return LV_CO2; }
+            else if (window[3] == 1 && window[4] == 1) { return LV_CO2; }
+            else { return LV_JO2; }
+        }
+    }
+    return LV_NONE;
 }
 
 
@@ -72,40 +115,11 @@ inline Level line_level(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, i16 dx, i16 dy, 
 
     Level best = LV_NONE;
 
-	for (i16 i = 0; i < 4; ++i)                     // 线性扫描窗口
+    for (i16 i = 0; i < 4; ++i)                     // 线性扫描窗口
     {
-        if (bad || cnt < 2) { goto Slide; }
-		if (cnt == 5 && (windows[i] == 1) ^ (windows[i + 5] == 1)) { return LV_5; }
-        if (cnt == 5) { best = std::max(best, LV_S4); goto Slide; }
+        best = std::max(best, enlevel(windows + i, bad, cnt));
+        if (best == LV_5) { return LV_5; }
 
-        if (windows[i] || windows[i + 5])
-        {
-            if (windows[i] == windows[i + 5]) { goto Slide; }
-            // 两头堵是死
-            // 两头都是自己的
-            // 不是空得太多
-            // 就是是四, 在其他窗口有判断
-            else if (cnt == 4) { best = std::max(best, LV_S4); }
-            else if (cnt == 3) { best = std::max(best, LV_S3); }
-            // 一端有自己的也算
-        }
-        else
-        {
-            if (cnt == 4) { best = std::max(best, LV_O4); }
-            else if (cnt == 3) {
-                best = std::max(best,
-                    (windows[i + 1] == 1) && (windows[i + 4] == 1) ? LV_JO3 : LV_CO3);
-            }
-            else if (cnt == 2)
-            {
-                     if (windows[i + 1] == 1 && windows[i + 4] == 1) { best = std::max(best, LV_JJO2); }
-                else if (windows[i + 1] == 1 && windows[i + 2] == 1) { best = std::max(best, LV_CO2 ); }
-                else if (windows[i + 3] == 1 && windows[i + 4] == 1) { best = std::max(best, LV_CO2 ); }
-                else { best = std::max(best, LV_JO2); }
-            }
-        }
-
-    Slide:
 		if (i == 3) { break; }
         if (windows[i    ] == 1) { --cnt; }
         if (windows[i + 1] == 2) { --bad; }
@@ -163,21 +177,23 @@ inline i64 combo_score(const Level (&L)[4])
     return best;
 }
 
-constexpr i16 ps_dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
 
+constexpr i16 ps_dirs[4][2] = { { 1,0 },{ 0,1 },{ 1,1 },{ 1,-1 } };
 // 给空点打分
 template <cui16 SIZE>
-inline i64 eval_point(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, ui8 color)
+inline i64 eval_point(ui8 (&board)[SIZE][SIZE], i16 x, i16 y, ui8 me)
 {
-    if (cell_at<SIZE>(board, x, y, color) == 2) return 0;
+    if (cell_at<SIZE>(board, x, y, me) == 2) return 0;
 	bool has_stone = board[y][x];
 
-    if (!has_stone) { board[y][x] = color; }
+    if (!has_stone) { board[y][x] = me; }
 
-    Level L[4];
+    Level L[4] = {};
+
     for (i16 d = 0; d < 4; ++d)
     {
-        L[d] = line_level<SIZE>(board, x, y, ps_dirs[d][0], ps_dirs[d][1], color);
+        L[d] = line_level<SIZE>(board, x, y, ps_dirs[d][0], ps_dirs[d][1], me);
+        if (has_stone) { g_levels[d][x + y * SIZE] = L[d]; }
     }
 
     if (!has_stone) { board[y][x] = 0; }

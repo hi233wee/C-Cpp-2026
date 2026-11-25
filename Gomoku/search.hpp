@@ -4,21 +4,22 @@
 #include "gen_moves.hpp"
 #include "tt.hpp"
 #include "hash.hpp"
+#include "try_move.hpp"
 #include "TIME.hpp"
 
 constexpr i64 INF = LLONG_MAX >> 2;
 
 
 template <cui16 SIZE>
-inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eval, ui64 key, ui8 depth, ui8 ply)
+inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, ui8 depth, ui8 ply)
 {
-	if (depth == 0) { return eval; }
+	if (depth == 0) { return g_board_val[me] - g_board_val[me == 1 ? 2 : 1]; }
 
 	Move list[SIZE * SIZE];
 	i16 n = gen_moves<SIZE>(board, me, depth + 2, list);
 	if (n <= 0) { return 0; }
 
-	if (TTEntry* entry = tt_probe(key); entry && entry->depth >= depth)
+	if (TTEntry* entry = tt_probe(g_key); entry && entry->depth >= depth)
 	{
 		if (entry->flag == TT_EXACT) { return entry->score; }
 		if (entry->flag == TT_LOWER) { alpha = std::max(alpha, entry->score); }
@@ -44,7 +45,6 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 	for (i16 i = 0; i < n; ++i)
 	{
 		board[list[i].y][list[i].x] = me;
-		key ^= g_z[me - 1][list[i].y * SIZE + list[i].x];
 
 		if (check_win(list[i].x, list[i].y, me))
 		{
@@ -52,13 +52,12 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 			return INF - ply;	// 早点赢好
 		}
 
-		i64 v = -negamax<SIZE>(board, me == 1 ? 2 : 1,
-			-beta, -alpha,
-			-eval - list[i].my_score, key,
-			depth - 1, ply + 1);
+		do_move<SIZE>(board, list[i].x, list[i].y, me);
 
-		board[list[i].y][list[i].x] = 0;
-		key ^= g_z[me - 1][list[i].y * SIZE + list[i].x];
+		i64 v = -negamax<SIZE>(board, me == 1 ? 2 : 1,
+			-beta, -alpha, depth - 1, ply + 1);
+
+		undo_move<SIZE>(board, list[i].x, list[i].y, me);
 
 		if (v > bestv) { bestv = v; besti = i; }
 		if (v > alpha) { alpha = v; nobigger = false; }
@@ -70,7 +69,7 @@ inline i64 negamax(ui8(&board)[SIZE][SIZE], ui8 me, i64 alpha, i64 beta, i64 eva
 	// bestv >=  beta: 剪枝了, 得到下界
 	// 
 	// alpha < bestv < beta: 搜完得到精确值
-	tt_store(TTEntry{ key, bestv, depth, list[besti].x, list[besti].y,
+	tt_store(TTEntry{ g_key, bestv, depth, list[besti].x, list[besti].y,
 		nobigger ? TT_UPPER : bestv >= beta ? TT_LOWER : TT_EXACT });
 
 	return bestv;
